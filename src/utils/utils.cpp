@@ -1,4 +1,9 @@
 #include "utils.h"
+#include "Logger.h"
+#include "dr_api.h"
+#include "dr_ir_decode.h"
+#include "dr_ir_instr.h"
+#include "dr_tools.h"
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -9,39 +14,20 @@
 #include <sys/syscall.h>
 #include <unordered_set>
 
+#define X86
+
 long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu, int group_fd, unsigned long flags)
 {
   return syscall(__NR_perf_event_open, event_attr, pid, cpu, group_fd, flags);
 }
 
-std::pair<branch, bool> find_next_unresolved_branch(uint64_t pc, const thread_context &tcontext, const user_context &ucontext)
+uint64_t get_pc(ucontext_t *ucontext)
 {
-  printf("Branch pc: %llx\n", pc);
-  while (true)
-  {
-    auto res = find_next_branch(pc);
-    if (!res.second)
-    {
-      printf("Fail to find a branch until the end of the code.\n");
-      return res;
-    }
-    else
-    {
-      printf("from addr: %llx\n", res.first.from_addr);
-      branch br = res.first;
-      // handle the breakpoint
-      if (br.to_addr == UNKNOWN_ADDR)
-      {
-        printf("Should handle the breakpoint\n");
-        return res;
-      }
-    }
-  }
-
-  return std::make_pair(branch{}, false);
+  // TODO: support more archs
+  return (uint64_t)(ucontext->uc_mcontext.gregs[REG_RIP]);
 }
 
-std::pair<branch, bool> find_next_branch(uint64_t pc)
+std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
 {
   amed_context context;
   // TODO: support more arch
@@ -59,43 +45,47 @@ std::pair<branch, bool> find_next_branch(uint64_t pc)
 
   amed_insn insn;
 
-  /* allocate buffer for formatter */
   // TODO: remove the internal malloc with memory pool
   char *buffer = (char *)malloc(256);
-  uint64_t cur_pc = pc;
+
   // TODO: partial decoding instructions non-branch instructions
   while (amed_decode_insn(pcontext, &insn))
   {
-    uint64_t temp_pc = cur_pc;
-    printf("current pc: %llx\n", temp_pc);
-    cur_pc += insn.length;
+    uint64_t temp_pc = (uint64_t)(pcontext->address);
+    printf("current pc: %lx\n", temp_pc);
+
     pcontext->address += insn.length;
     pcontext->length -= insn.length;
 
     amed_print_insn(buffer, &context, &insn, &formatter);
-    printf("%s(len: %d)\n", buffer, insn.length);
+    printf("%s(len: %d, %d args)\n", buffer, insn.length, insn.argument_count);
 
-    if (!insn.may_branch)
+    if (!is_control_flow_transfer(insn))
     {
       continue;
     }
-    if (AMED_CATEGORY_BRANCH == insn.categories[1])
-    {
-      /* explicit branch:
-         un|conditional branch */
-      puts(AMED_CATEGORY_CONDITIONALLY == insn.categories[2] ? "instruction branch conditionally." : "instruction branch unconditionally.");
 
+    // test if the branch could be statically evaluated
+    auto static_res = static_evaluate(tcontext, temp_pc, *pcontext, insn);
+    if (!static_res.second)
+    {
+      free(buffer);
       return std::make_pair(branch{
                                 .from_addr = temp_pc,
-                                .to_addr = UNKNOWN_ADDR,
+                                .to_addr = static_res.first,
                             },
                             true);
     }
-    else
-    {
-      puts("interworking branch.");
-    }
+
+    free(buffer);
+    // this branch needs to be evaluated dynamically
+    return std::make_pair(branch{
+                              .from_addr = temp_pc,
+                              .to_addr = UNKNOWN_ADDR,
+                          },
+                          true);
   }
+
   free(buffer);
   return std::make_pair(branch{}, false);
 }
@@ -112,20 +102,21 @@ void enable_perf_sampling(pid_t tid, int perf_fd)
 
 void disable_perf_sampling(pid_t tid, int perf_fd)
 {
-  if (close(perf_fd) != 0) {
-    perror("close");
-    exit(EXIT_FAILURE);
-  }
-  return;
-  // TODO: dead code here
   if (ioctl(perf_fd, PERF_EVENT_IOC_DISABLE, 0) == -1)
   {
     perror("ioctl(PERF_EVENT_IOC_DISABLE)");
     exit(EXIT_FAILURE);
   }
+
+  if (close(perf_fd) != 0)
+  {
+    perror("close");
+    exit(EXIT_FAILURE);
+  }
+  return;
 }
 
-std::pair<uint64_t, bool> record_branch_if_taken(branch &br, user_context &context)
+std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branch &br, ucontext_t &context)
 {
   amed_formatter formatter = {0};
   formatter.lower_case = true;
@@ -133,36 +124,26 @@ std::pair<uint64_t, bool> record_branch_if_taken(branch &br, user_context &conte
   /* allocate buffer for formatter */
   // TODO: remove the internal malloc with memory pool
   char *buffer = (char *)malloc(256);
-  // TODO: implement this function
-  // For now, we just check if the code at br.from_addr is a branch instruction
   amed_context acontext;
 
   // TODO: support more arch
   acontext.architecture = AMED_ARCHITECTURE_X86;
   acontext.machine_mode = AMED_MACHINE_MODE_64;
-  // TODO: set to precise length
   acontext.length = INT32_MAX;
   acontext.address = (uint8_t *)br.from_addr;
 
-  printf("try to decode the instruction at %#x\n", br.from_addr);
+  printf("record_branch_if_taken: decode the instruction at %lx\n", br.from_addr);
   amed_insn insn;
   if (amed_decode_insn(&acontext, &insn))
   {
-    amed_print_insn(buffer, &acontext, &insn, &formatter);
-    printf("%s\n", buffer);
-    if (insn.may_branch && AMED_CATEGORY_BRANCH == insn.categories[1])
-    {
-      printf("Pass! This is a branch instrucion!\n");
-      return std::make_pair(0, true);
-    }
-    else
-    {
-      printf("Not a branch\n");
-    }
+    // assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
+    if (!is_control_flow_transfer(insn))
+      return std::make_pair(UNKNOWN_ADDR, false);
+    return evaluate(tcontext.dr_context, acontext, insn, &context);
   }
   else
   {
-    printf("fail to decode the instruction\n");
+    printf("record_branch_if_taken: fail to decode the instruction\n");
     exit(EXIT_FAILURE);
   }
 
@@ -210,7 +191,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, bool exclue_target)
       break;
   }
 
-  printf("Find tids:");
+  printf("get_tids: Find tids:");
   for (auto &tid : tids)
   {
     printf("%ld ", tid);
@@ -219,193 +200,374 @@ std::vector<pid_t> get_tids(pid_t target_pid, bool exclue_target)
   return tids;
 }
 
-void set_breakpoint(pid_t tid, uint64_t addr)
+int perf_events_enable(pid_t tid)
 {
   struct perf_event_attr pe;
-
   memset(&pe, 0, sizeof(struct perf_event_attr));
-  pe.type = PERF_TYPE_BREAKPOINT;
+  pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
-  pe.config = 0;
-  pe.bp_type = HW_BREAKPOINT_X;
-  pe.bp_addr = (uintptr_t)(addr);
-  pe.bp_len = 8;
-  pe.sample_period = 1; // make sure every breakpoint will cause a overflow
+  pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+  pe.sample_period = 10;
   pe.disabled = 1;
   pe.exclude_kernel = 1;
+  pe.exclude_hv = 1;
+  pe.wakeup_events = 1;
 
-  int perf_fd;
-  printf("enter the set breakpoint, errno is %d\n", errno);
-  while ((perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0)) == -1)
+  int perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0);
+  if (perf_fd == -1)
   {
     perror("perf_event_open");
-    printf("breakpoint is in use");
-    exit(EXIT_FAILURE);
-    sched_yield();
+    return -1;
   }
 
-  // TODO: use a better way to handle the errors
   struct f_owner_ex owner;
   owner.type = F_OWNER_TID;
   owner.pid = tid;
-  if (fcntl(perf_fd, F_SETOWN_EX, &owner) == -1)
+
+  if (fcntl(perf_fd, F_SETOWN_EX, &owner) != 0)
+  {
+    perror("F_SETOWN_EX");
+    exit(EXIT_FAILURE);
+  }
+  if (fcntl(perf_fd, F_SETSIG, SIGIO) != 0)
   {
     perror("F_SETSIG");
     exit(EXIT_FAILURE);
   }
-
-  if (fcntl(perf_fd, F_SETSIG, SIGIO) == -1)
-  {
-    perror("F_SETSIG");
-    exit(EXIT_FAILURE);
-  }
-
-  int flags = fcntl(perf_fd, F_GETFL, 0);
-  if (flags == -1)
-  {
-    perror("F_GETFL");
-    exit(EXIT_FAILURE);
-  }
-
-  if (fcntl(perf_fd, F_SETFL, flags | O_ASYNC) == -1)
+  if (fcntl(perf_fd, F_SETFL, O_NONBLOCK | O_ASYNC))
   {
     perror("F_SETFL");
     exit(EXIT_FAILURE);
   }
 
-  // reset the signal handler
-  struct sigaction sa;
-  sa.sa_sigaction = breakpoint_handler;
-  sa.sa_flags = SA_SIGINFO | SA_RESTART | SA_NODEFER;
-  sigemptyset(&sa.sa_mask);
-  if (sigaction(SIGIO, &sa, NULL) == -1 || errno != 0)
-  {
-    perror("sigaction");
-    return;
-  }
-
   // open perf_event
-  // ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0);
-  ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0);
-  printf("successfully set breakpoint at %#x\n", addr);
-}
-
-void remove_breakpoint(int perf_fd, uint64_t addr)
-{
-  if (close(perf_fd) != 0) {
-    perror("close");
+  if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
+  {
+    perror("PERF_EVENT_IOC_RESET");
     exit(EXIT_FAILURE);
   }
 
-  // reset the signal handler
-  struct sigaction sa;
-  sa.sa_sigaction = sampling_handler;
-  sa.sa_flags = SA_SIGINFO;
-  sigemptyset(&sa.sa_mask);
-  if (sigaction(SIGIO, &sa, NULL) == -1)
+  printf("perf_events_enable: for %d->%d(fd: %d)\n", owner.pid, syscall(SYS_gettid), perf_fd);
+  if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) != 0)
   {
-    perror("sigaction");
-    return;
+    perror("PERF_EVENT_IOC_ENABLE");
+    exit(EXIT_FAILURE);
   }
 
-  printf("successfully remove breakpoint at %#x of %d\n", addr, perf_fd);
+  return perf_fd;
 }
 
-void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
+bool is_control_flow_transfer(amed_insn &insn)
 {
-  printf("si_code:%d\n", info->si_code);
-  printf("Breakpoint handler: the fd is %d handled by %d\n", info->si_fd, syscall(SYS_gettid));
-
-  ucontext_t *uc = (ucontext_t *)ucontext;
-
-  uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
-  branch br = branch{.from_addr = pc};
-  user_context u_context{};
-  auto target_taken = record_branch_if_taken(br, u_context);
-  if (target_taken.second)
+  switch (insn.categories[1])
   {
-    remove_breakpoint(info->si_fd, pc);
-    perf_events_enable(syscall(SYS_gettid));
+  case AMED_CATEGORY_BRANCH:
+  case AMED_CATEGORY_CALL:
+  case AMED_CATEGORY_RET:
+    return true;
+  default:
+    return false;
   }
-  else
-  {
-    printf("Continue to get breakpoint\n");
-  }
-  // enable_perf_sampling(syscall(SYS_gettid), info->si_fd);
-  return;
 }
 
-void sampling_handler(int signum, siginfo_t *info, void *ucontext)
+void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
 {
-  // pid_t target_pid = perf_id_map.get(info->si_fd);
-  pid_t target_pid = syscall(SYS_gettid);
-  ucontext_t *uc = (ucontext_t *)ucontext;
+  mcontext->size = sizeof(dr_mcontext_t);
+  mcontext->flags = DR_MC_ALL;
 
-  // TODO: it seems the info->si_code is always the POLL_IN
-  printf("Sampling handler: the fd is %d, handled by %d\n", info->si_fd, syscall(SYS_gettid));
-
-  disable_perf_sampling(target_pid, info->si_fd);
-
-  // get PC
-  uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
-  printf("ip: %#x\n", pc);
-
-  thread_context tcontext{
-      .tid = target_pid,
-  };
-
-  const user_context shit{};
-  auto branch_ok = find_next_unresolved_branch(pc, tcontext, shit);
-  if (branch_ok.second)
-  {
-    branch br = branch_ok.first;
-    set_breakpoint(target_pid, br.from_addr);
-  }
-
-  // TODO: remove the sleep. Currently we use it to debug the output.
-  sleep(1);
+  mcontext->xdi = ucontext->uc_mcontext.gregs[REG_RDI];
+  mcontext->xsi = ucontext->uc_mcontext.gregs[REG_RSI];
+  mcontext->xbp = ucontext->uc_mcontext.gregs[REG_RBP];
+  mcontext->xsp = ucontext->uc_mcontext.gregs[REG_RSP];
+  mcontext->xax = ucontext->uc_mcontext.gregs[REG_RAX];
+  mcontext->xbx = ucontext->uc_mcontext.gregs[REG_RBX];
+  mcontext->xcx = ucontext->uc_mcontext.gregs[REG_RCX];
+  mcontext->xdx = ucontext->uc_mcontext.gregs[REG_RDX];
+  mcontext->xip = (byte *)ucontext->uc_mcontext.gregs[REG_RIP];
+  mcontext->xflags = ucontext->uc_mcontext.gregs[REG_EFL];
 }
 
-int perf_events_enable(pid_t tid, pid_t main_tid)
+std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
 {
-    struct perf_event_attr pe;
-    memset(&pe, 0, sizeof(struct perf_event_attr));
-    pe.type = PERF_TYPE_HARDWARE;
-    pe.size = sizeof(struct perf_event_attr);
-    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-    pe.sample_period = 100000000;
-    pe.disabled = 1;
-    // pe.inherit = 1;
-    pe.exclude_kernel = 1;
-    pe.exclude_hv = 1;
+  assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
+  if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
+  {
+    instr_t d_insn;
+    printf("static_evaluate: try to init the instruction\n");
+    instr_init(tcontext.dr_context, &d_insn);
 
-    int perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0);
-    if (perf_fd == -1)
+    printf("static_evaluate: try to decode the instruction\n");
+    if (decode(tcontext.dr_context, (byte *)pc, &d_insn) == nullptr)
     {
-        perror("perf_event_open");
-        return -1;
-    }
-
-    // TODO: use a better way to handle the errors
-    struct f_owner_ex owner;
-    if (main_tid != -1)
-    {
-        owner.type = F_OWNER_PID;
-        owner.pid = main_tid;
+      printf("fail to decode the instruction using dynamorio\n");
+      exit(EXIT_FAILURE);
     }
     else
     {
-        owner.type = F_OWNER_TID;
-        owner.pid = tid;
+      printf("static_evaluate: succeed to decode the instruction using dynamorio\n");
     }
-    fcntl(perf_fd, F_SETOWN_EX, &owner);
-    fcntl(perf_fd, F_SETSIG, SIGIO);
-    fcntl(perf_fd, F_SETFL, O_NONBLOCK | O_ASYNC);
 
-    // open perf_event
-    ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0);
-    ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0);
+    opnd_t target_op = instr_get_target(&d_insn);
+    uint64_t target_addr = UNKNOWN_ADDR;
+    if (opnd_is_immed(target_op))
+    {
+      if (opnd_is_immed_int(target_op))
+      {
+        target_addr = opnd_get_immed_int(target_op);
+      }
+      else if (opnd_is_immed_int64(target_op))
+      {
+        target_addr = opnd_get_immed_int64(target_op);
+      }
+      else
+      {
+        assert(0 && "direct control flow trasfer should only go to int address!");
+      }
+    }
+    else
+    {
+      printf("static_evaluate: the target is not imm\n");
+    }
 
-    printf("perf events enable for %d->%d(fd: %d)\n", owner.pid, syscall(SYS_gettid), perf_fd);
-    return perf_fd;
+    instr_free(tcontext.dr_context, &d_insn);
+    return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? true : false);
+  }
+  else
+  {
+    return std::make_pair(UNKNOWN_ADDR, true);
+  }
+}
+
+std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+{
+  return evaluate_x86(dr_context, context, insn, ucontext);
+}
+
+std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+{
+  assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
+
+  dr_mcontext_t mcontext;
+  init_dr_mcontext(&mcontext, ucontext);
+  instr_t d_insn;
+  instr_init(dr_context, &d_insn);
+  byte *addr = (byte *)(ucontext->uc_mcontext.gregs[REG_RIP]);
+
+  if (decode(dr_context, addr, &d_insn) == nullptr)
+  {
+    printf("fail to decode the instruction using dynamorio\n");
+    exit(EXIT_FAILURE);
+  }
+  else
+  {
+    instr_disassemble(dr_context, &d_insn, STDOUT);
+    printf("\nsucceed to decode the instruction using dynamorio\n");
+  }
+
+  // judge what kind of the instruction is
+  if (AMED_CATEGORY_BRANCH == insn.categories[1])
+  {
+    assert(instr_is_cbr(&d_insn) || instr_is_ubr(&d_insn) || instr_is_mbr(&d_insn));
+  }
+  else if (AMED_CATEGORY_CALL == insn.categories[1])
+  {
+    assert(instr_is_call(&d_insn));
+    puts("call instruction");
+  }
+  else if (AMED_CATEGORY_RET == insn.categories[1])
+  {
+    assert(instr_is_return(&d_insn));
+    // puts("evaluate a ret instruction");
+    // assert(insn.argument_count <= 1 && "ret [imm] should contains no more than one argument.");
+    // ret will always unconditionally go to the stack top
+    // return std::make_pair(ucontext->uc_mcontext.gregs[REG_RSP], true);
+  }
+  else
+  {
+    puts("interworking branch.");
+  }
+
+  opnd_t target_op = instr_get_target(&d_insn);
+  app_pc target_address = nullptr;
+  uint64_t target_addr = UNKNOWN_ADDR;
+  if (opnd_is_memory_reference(target_op))
+  {
+    printf("evaluate_x86: is memory ref\n");
+  }
+  else if (opnd_is_pc(target_op))
+  {
+    printf("evaluate_x86: is pc\n");
+  }
+  else if (opnd_is_reg(target_op))
+  {
+    printf("evaluate_x86: is reg\n");
+  }
+
+  dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
+
+  if (opnd_is_immed(target_op))
+  {
+    if (opnd_is_immed_int(target_op))
+    {
+      target_addr = opnd_get_immed_int(target_op);
+    }
+    else
+    {
+      assert(0 && "direct control flow trasfer should only go to int address!");
+    }
+  }
+  else if (opnd_is_pc(target_op))
+  {
+    target_address = opnd_get_pc(target_op); // TODO: is this always offset?
+    if (target_address == nullptr)
+    {
+      printf("fail to compute the address of operand");
+      exit(EXIT_FAILURE);
+    }
+    target_addr = (uint64_t)(target_address);
+  }
+  else if (opnd_is_reg(target_op))
+  {
+    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext) + insn.length; // TODO: is this always offset?
+  }
+  else
+  {
+    target_address = opnd_compute_address(target_op, &mcontext);
+    if (target_address == nullptr)
+    {
+      printf("fail to compute the address of operand");
+      exit(EXIT_FAILURE);
+    }
+    target_addr = (uint64_t)(target_address);
+  }
+
+  if (target_addr == UNKNOWN_ADDR)
+  {
+    puts("fail to get the target address of the operand");
+    exit(EXIT_FAILURE);
+  }
+  else
+  {
+    printf("the target address of the current instruction is %#lx\n", target_addr);
+  }
+
+  bool taken = true;
+  if (instr_is_cbr(&d_insn))
+  {
+    uint32_t eflags = mcontext.xflags;
+
+    switch (instr_get_opcode(&d_insn))
+    {
+    case OP_jb:
+    case OP_jb_short:
+      taken = mcontext.xflags & EFLAGS_CF; // CF=1
+      break;
+    case OP_jbe:
+    case OP_jbe_short:
+      taken = (mcontext.xflags & EFLAGS_CF) || (mcontext.xflags & EFLAGS_ZF); // CF=1 or ZF=1
+      break;
+    // TODO: it seems dynamorio doesn't support this
+    // case OP_jc:
+    //   taken = mcontext.xflags & EFLAGS_CF; // CF=1
+    //   break;
+    case OP_jecxz:
+      taken = mcontext.xcx & 0xFFFFFFFF;
+      break;
+    case OP_jl:
+    case OP_jl_short:
+      taken = (mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF); // SF!=OF
+      break;
+    case OP_jle:
+    case OP_jle_short:
+      taken = (mcontext.xflags & EFLAGS_ZF) || ((mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF)); // ZF=1 | SF!=OF
+      break;
+    case OP_jnb:
+    case OP_jnb_short:
+      taken = !(mcontext.xflags & EFLAGS_CF); // CF=0
+      break;
+    case OP_jnbe:
+    case OP_jnbe_short:
+      taken = !(mcontext.xflags & EFLAGS_CF) && !(mcontext.xflags & EFLAGS_ZF); // CF=0 and ZF=0
+      break;
+    // TODO:
+    // case OP_jnc:
+    //   taken = !(mcontext.xflags & EFLAGS_CF); // CF=0
+    //   break;
+    // TODO:
+    // case OP_jng:
+    //   taken = (mcontext.xflags & EFLAGS_ZF) || ((mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF)); // ZF=1 or SF!=OF
+    //   break;
+    // case OP_jnge:
+    //   taken = (mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF); // SF!=OF
+    //   break;
+    case OP_jnl:
+    case OP_jnl_short:
+      taken = (mcontext.xflags & EFLAGS_SF) == (mcontext.xflags & EFLAGS_OF); // SF=OF
+      break;
+    case OP_jnle:
+    case OP_jnle_short:
+      taken = (mcontext.xflags & EFLAGS_ZF) && ((mcontext.xflags & EFLAGS_SF) == (mcontext.xflags & EFLAGS_OF)); // ZF=1 and SF=OF
+      break;
+    case OP_jno:
+    case OP_jno_short:
+      taken = !(mcontext.xflags & EFLAGS_OF); // OF=0
+      break;
+    case OP_jnp:
+    case OP_jnp_short:
+      taken = !(mcontext.xflags & EFLAGS_PF); // PF=0
+      break;
+    case OP_jns:
+    case OP_jns_short:
+      taken = !(mcontext.xflags & EFLAGS_SF); // SF=0
+      break;
+    case OP_jnz:
+    case OP_jnz_short:
+      taken = !(mcontext.xflags & EFLAGS_ZF); // ZF=0
+      break;
+    case OP_jo:
+    case OP_jo_short:
+      taken = mcontext.xflags & EFLAGS_OF; // OF=1
+      break;
+    case OP_jp:
+    case OP_jp_short:
+      taken = mcontext.xflags & EFLAGS_PF; // PF=1
+      break;
+      // TODO: it seems dynamorio doesn't support this case OP_jpe:
+      // TODO: it seems dynamorio doesn't support this case OP_jpo:
+    case OP_js:
+    case OP_js_short:
+      taken = mcontext.xflags & EFLAGS_SF; // SF=1
+      break;
+    case OP_jz:
+    case OP_jz_short:
+      taken = mcontext.xflags & EFLAGS_ZF; // ZF=1
+      break;
+    default:
+      // Handle other conditional branches as needed
+      assert(0 && "unhandled jump instrcution.");
+      break;
+    }
+
+    printf("the conditional branch is ");
+    if (!taken)
+      printf("not ");
+    printf("taken\n");
+  }
+  else
+  {
+    printf("the unconditional branch is taken\n");
+  }
+
+  // handle the cbr
+  instr_free(dr_context, &d_insn);
+
+  if (taken)
+  {
+    printf("[log]taken branch: %#lx -> %#lx\n", (uint64_t)ucontext->uc_mcontext.gregs[REG_RIP], target_addr);
+  }
+  return std::make_pair(target_addr, taken);
+}
+
+std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+{
 }

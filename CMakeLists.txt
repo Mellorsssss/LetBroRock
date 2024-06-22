@@ -6,18 +6,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_compile_options("-w")
 
+add_definitions( -D LOGGER_MAX_LOG_LEVEL_PRINTED=6 )
+add_definitions( -D LOGGER_PREFIX_LEVEL=2 )
+add_definitions( -D LOGGER_ENABLE_COLORS=1 )
+add_definitions( -D LOGGER_ENABLE_COLORS_ON_USER_HEADER=0 )
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 file(GLOB SOURCES "src/engine/*.cpp" "src/utils/*.cpp")
 add_library(profiler SHARED ${SOURCES})
 
-# file(GLOB FOO "src/test/bp/foo.cpp" "src/utils/*.cpp")
-# add_executable(foo ${FOO})
 
-target_include_directories(profiler PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/AMED/include)
-# target_include_directories(foo PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/AMED/include)
+target_include_directories(profiler PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/include/log ${PROJECT_SOURCE_DIR}/third_party/AMED/include ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/include)
 
+target_compile_definitions(profiler PRIVATE LINUX X86_64)
 add_subdirectory(third_party)
-target_link_libraries(profiler PRIVATE pthread AMED)
-# target_link_libraries(foo PRIVATE pthread AMED)
+link_directories(${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/lib64/debug)
+target_link_libraries(profiler PRIVATE pthread AMED ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/lib64/release/libdynamorio.so)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     add_definitions(-D__x86_64__)
