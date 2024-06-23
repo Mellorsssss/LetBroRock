@@ -81,11 +81,11 @@ bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tconte
 {
     while (true)
     {
-        printf("find_next_unresolved_branch: Branch PC: %#lx\n", pc);
+        DEBUG("Branch PC: %#lx", pc);
         auto res = find_next_branch(tcontext, pc);
         if (!res.second)
         {
-            printf("find_next_unresolved_branch: Fail to find a branch until the end of the code.\n");
+            INFO("Fail to find a branch until the end of the code from %#lx.", pc);
             return false;
         }
         else
@@ -95,11 +95,11 @@ bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tconte
             // handle the breakpoint
             if (br.to_addr == UNKNOWN_ADDR)
             {
-                LogInfo("find_next_unresolved_branch: Should set the breakpoint\n");
+                DEBUG("find_next_unresolved_branch: Should set the breakpoint");
                 return true;
             }
 
-            LogInfo("find_next_unresolved_branch: Branch is taken unconditionally");
+            DEBUG("find_next_unresolved_branch: Branch is taken unconditionally");
             if (buffer_size() == 0)
             {
                 return false;
@@ -140,7 +140,7 @@ void signal_posthandle(sigset_t &old_set)
 
 void bootstrap_sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
-    printf("First Sampling handler:%d open the real handler at %#lx\n", syscall(SYS_gettid), get_pc((ucontext_t *)ucontext));
+    DEBUG("First Sampling handler:%d open the real handler at %#lx", syscall(SYS_gettid), get_pc((ucontext_t *)ucontext));
     struct sigaction sa;
     sa.sa_sigaction = sampling_handler;
     // sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
@@ -156,8 +156,7 @@ void bootstrap_sampling_handler(int signum, siginfo_t *info, void *ucontext)
     thread_dr_context = dr_standalone_init();
     if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
     {
-        printf("fail to set the isa mode.\n");
-        exit(EXIT_FAILURE);
+        ERROR("fail to set the isa mode.");
     }
 
     perf_events_enable(syscall(SYS_gettid));
@@ -180,11 +179,11 @@ void set_breakpoint(pid_t tid, uint64_t addr)
     pe.exclude_kernel = 1;
 
     int perf_fd;
-    printf("enter the set breakpoint, errno is %d\n", errno);
+    DEBUG("enter the set breakpoint, errno is %d", errno);
     while ((perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0)) == -1)
     {
         perror("perf_event_open");
-        printf("breakpoint is in use");
+        WARNING("breakpoint is in use");
         exit(EXIT_FAILURE);
         sched_yield();
     }
@@ -230,7 +229,7 @@ void set_breakpoint(pid_t tid, uint64_t addr)
         return;
     }
 
-    printf("successfully set breakpoint at %lx\n", pe.bp_addr);
+    DEBUG("successfully set breakpoint at %lx", pe.bp_addr);
     if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
     {
         perror("PERF_EVENT_IOC_RESET");
@@ -253,7 +252,7 @@ void remove_breakpoint(int perf_fd, uint64_t addr)
         exit(EXIT_FAILURE);
     }
 
-    printf("successfully remove breakpoint at %#lx of %d\n", addr, perf_fd);
+    DEBUG("successfully remove breakpoint at %#lx of %d", addr, perf_fd);
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
@@ -267,7 +266,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
     if (pc != breakpoint_addr)
     {
-        printf("real breakpoint %#lx is different from setted breakpoint addr %#lx\n", pc, breakpoint_addr);
+        WARNING("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, breakpoint_addr);
         remove_breakpoint(info->si_fd, pc);
         signal_posthandle(old_set);
 
@@ -276,8 +275,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     }
     remove_breakpoint(info->si_fd, pc);
 
-    printf("si_code:%d\n", info->si_code);
-    printf("Breakpoint handler: the fd is %d handled by %d\n", info->si_fd, syscall(SYS_gettid));
+    DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, syscall(SYS_gettid));
 
     branch br = branch{.from_addr = pc};
     thread_context tcontext{
@@ -290,7 +288,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         if (buffer_size() == 0)
         {
-            printf("buffer is full\n");
+            DEBUG("buffer is full");
             buffer_reset();
             signal_posthandle(old_set);
 
@@ -324,7 +322,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     if (errno == EINTR)
     {
         errno = 0;
-        printf("Sampling handler mitakenly interrupt a syscall, just return\n");
+        WARNING("Sampling handler mitakenly interrupt a syscall, just return");
         return;
     }
     pid_t target_pid = syscall(SYS_gettid);
@@ -335,11 +333,11 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
     ucontext_t *uc = (ucontext_t *)ucontext;
 
-    printf("Sampling handler: the fd is %d, handled by %d\n", info->si_fd, syscall(SYS_gettid));
+    DEBUG("Sampling handler: the fd is %d, handled by %d", info->si_fd, syscall(SYS_gettid));
 
     // get PC
     uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
-    printf("ip: %lx\n", pc);
+    DEBUG("ip: %lx", pc);
 
     thread_context tcontext{
         .tid = target_pid,
@@ -388,18 +386,19 @@ __attribute__((constructor)) void preload_main()
         atexit([]()
                { 
                 dr_standalone_exit();
-                printf("Just for testing :D Hooked exit function\n"); });
+                INFO("Just for testing :D Hooked exit function"); exit(EXIT_SUCCESS); });
 
-        printf("Child process (PID: %d) continuing with current command.\n", getpid());
+        INFO("Child process (PID: %d) continuing with current command.", getpid());
     }
     else
     {
+        exit(EXIT_FAILURE);
         // Profiler process
-        printf("Profiler process (PID: %d) executing other logic.\n", getpid());
+        INFO("Profiler process (PID: %d) executing other logic.", getpid());
 
         std::vector<pid_t> tids = get_tids(pid, true);
         assert(tids.size() > 0 && "Target should has at least one thread.");
-        printf("Profiler begin to trace %d\n", tids[0]);
+        INFO("Profiler begin to trace %d", tids[0]);
 
         for (auto &tid : tids)
         {
@@ -410,13 +409,10 @@ __attribute__((constructor)) void preload_main()
             }
         }
 
-        while (1)
-        {
-            pause();
-        }
-
         int status;
-        waitpid(tids[0], &status, __WALL);
+        WARNING("begin to wait for the pid");
+        waitpid(pid, &status, __WALL);
+        WARNING("succeed to wait for the pid");
         if (errno != 0)
         {
             perror("waitpid");
@@ -425,14 +421,15 @@ __attribute__((constructor)) void preload_main()
 
         if (WIFEXITED(status))
         {
-            printf("Child process exited with status %d.\n", WEXITSTATUS(status));
+            INFO("Child process exited with status %d.", WEXITSTATUS(status));
         }
         else
         {
-            printf("Child process did not exit normally.\n");
+            ERROR("Child process did not exit normally.");
         }
 
         // Optionally, exit the parent process if it's not needed
-        exit(EXIT_SUCCESS);
+        WARNING("Profiler exits");
+        exit(EXIT_FAILURE);
     }
 }

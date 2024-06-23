@@ -52,13 +52,13 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
   while (amed_decode_insn(pcontext, &insn))
   {
     uint64_t temp_pc = (uint64_t)(pcontext->address);
-    printf("current pc: %lx\n", temp_pc);
+    DEBUG("current pc: %lx", temp_pc);
 
     pcontext->address += insn.length;
     pcontext->length -= insn.length;
 
-    amed_print_insn(buffer, &context, &insn, &formatter);
-    printf("%s(len: %d, %d args)\n", buffer, insn.length, insn.argument_count);
+    // amed_print_insn(buffer, &context, &insn, &formatter);
+    // DEBUG("%s(len: %d, %d args)", buffer, insn.length, insn.argument_count);
 
     if (!is_control_flow_transfer(insn))
     {
@@ -92,7 +92,7 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
 
 void enable_perf_sampling(pid_t tid, int perf_fd)
 {
-  printf("enable perf sampling for %d\n", tid);
+  DEBUG("enable perf sampling for %d", tid);
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) == -1)
   {
     perror("ioctl(PERF_EVENT_IOC_ENABLE)");
@@ -132,7 +132,7 @@ std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branc
   acontext.length = INT32_MAX;
   acontext.address = (uint8_t *)br.from_addr;
 
-  printf("record_branch_if_taken: decode the instruction at %lx\n", br.from_addr);
+  DEBUG("record_branch_if_taken: decode the instruction at %lx", br.from_addr);
   amed_insn insn;
   if (amed_decode_insn(&acontext, &insn))
   {
@@ -143,8 +143,7 @@ std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branc
   }
   else
   {
-    printf("record_branch_if_taken: fail to decode the instruction\n");
-    exit(EXIT_FAILURE);
+    ERROR("record_branch_if_taken: fail to decode the instruction");
   }
 
   return std::make_pair(0, false);
@@ -191,12 +190,13 @@ std::vector<pid_t> get_tids(pid_t target_pid, bool exclue_target)
       break;
   }
 
-  printf("get_tids: Find tids:");
+  std::string log_str = "get_tids: Find tids:";
   for (auto &tid : tids)
   {
-    printf("%ld ", tid);
+    log_str += std::to_string(tid) + " ";
   }
-  printf("\n");
+
+  INFO("%s", log_str.c_str());
   return tids;
 }
 
@@ -206,8 +206,9 @@ int perf_events_enable(pid_t tid)
   memset(&pe, 0, sizeof(struct perf_event_attr));
   pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
-  pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-  pe.sample_period = 1000;
+  // pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+  pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
+  pe.sample_period = 5000,000;
   pe.disabled = 1;
   pe.exclude_kernel = 1;
   pe.exclude_hv = 1;
@@ -234,7 +235,7 @@ int perf_events_enable(pid_t tid)
     perror("F_SETSIG");
     exit(EXIT_FAILURE);
   }
-  if (fcntl(perf_fd, F_SETFL, (fcntl(perf_fd, F_GETFL, 0)) |O_NONBLOCK | O_ASYNC))
+  if (fcntl(perf_fd, F_SETFL, (fcntl(perf_fd, F_GETFL, 0)) | O_NONBLOCK | O_ASYNC))
   {
     perror("F_SETFL");
     exit(EXIT_FAILURE);
@@ -247,7 +248,7 @@ int perf_events_enable(pid_t tid)
     exit(EXIT_FAILURE);
   }
 
-  printf("perf_events_enable: for %d->%d(fd: %d)\n", owner.pid, syscall(SYS_gettid), perf_fd);
+  DEBUG("perf_events_enable: for %d->%d(fd: %d)", owner.pid, syscall(SYS_gettid), perf_fd);
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) != 0)
   {
     perror("PERF_EVENT_IOC_ENABLE");
@@ -293,18 +294,16 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
   if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
   {
     instr_t d_insn;
-    printf("static_evaluate: try to init the instruction\n");
     instr_init(tcontext.dr_context, &d_insn);
 
-    printf("static_evaluate: try to decode the instruction\n");
+    DEBUG("static_evaluate: try to decode the instruction");
     if (decode(tcontext.dr_context, (byte *)pc, &d_insn) == nullptr)
     {
-      printf("fail to decode the instruction using dynamorio\n");
-      exit(EXIT_FAILURE);
+      ERROR("fail to decode the instruction using dynamorio");
     }
     else
     {
-      printf("static_evaluate: succeed to decode the instruction using dynamorio\n");
+      DEBUG("static_evaluate: succeed to decode the instruction using dynamorio");
     }
 
     opnd_t target_op = instr_get_target(&d_insn);
@@ -326,7 +325,7 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
     }
     else
     {
-      printf("static_evaluate: the target is not imm\n");
+      DEBUG("static_evaluate: the target is not imm");
     }
 
     instr_free(tcontext.dr_context, &d_insn);
@@ -355,13 +354,12 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 
   if (decode(dr_context, addr, &d_insn) == nullptr)
   {
-    printf("fail to decode the instruction using dynamorio\n");
-    exit(EXIT_FAILURE);
+    ERROR("fail to decode the instruction using dynamorio");
   }
   else
   {
-    instr_disassemble(dr_context, &d_insn, STDOUT);
-    printf("\nsucceed to decode the instruction using dynamorio\n");
+    // instr_disassemble(dr_context, &d_insn, STDOUT);
+    DEBUG("\nsucceed to decode the instruction using dynamorio");
   }
 
   // judge what kind of the instruction is
@@ -388,18 +386,18 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   uint64_t target_addr = UNKNOWN_ADDR;
   if (opnd_is_memory_reference(target_op))
   {
-    printf("evaluate_x86: is memory ref\n");
+    DEBUG("evaluate_x86: is memory ref");
   }
   else if (opnd_is_pc(target_op))
   {
-    printf("evaluate_x86: is pc\n");
+    DEBUG("evaluate_x86: is pc");
   }
   else if (opnd_is_reg(target_op))
   {
-    printf("evaluate_x86: is reg\n");
+    DEBUG("evaluate_x86: is reg");
   }
 
-  dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
+  // dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
 
   if (opnd_is_immed(target_op))
   {
@@ -417,8 +415,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
     target_address = opnd_get_pc(target_op); // TODO: is this always offset?
     if (target_address == nullptr)
     {
-      printf("fail to compute the address of operand");
-      exit(EXIT_FAILURE);
+      ERROR("fail to compute the address of operand");
     }
     target_addr = (uint64_t)(target_address);
   }
@@ -431,8 +428,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
     target_address = opnd_compute_address(target_op, &mcontext);
     if (target_address == nullptr)
     {
-      printf("fail to compute the address of operand");
-      exit(EXIT_FAILURE);
+      ERROR("fail to compute the address of operand");
     }
     target_addr = (uint64_t)(target_address);
   }
@@ -444,7 +440,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   }
   else
   {
-    printf("the target address of the current instruction is %#lx\n", target_addr);
+    DEBUG("the target address of the current instruction is %#lx", target_addr);
   }
 
   bool taken = true;
@@ -544,14 +540,15 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
       break;
     }
 
-    printf("the conditional branch is ");
+    std::string log_str = "the conditional branch is ";
     if (!taken)
-      printf("not ");
-    printf("taken\n");
+      log_str += "not ";
+    log_str += "taken";
+    DEBUG("%s", log_str.c_str());
   }
   else
   {
-    printf("the unconditional branch is taken\n");
+    DEBUG("the unconditional branch is taken");
   }
 
   // handle the cbr
@@ -559,15 +556,42 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 
   if (taken)
   {
-    printf("[log]taken branch: %#lx -> %#lx\n", get_pc(ucontext), target_addr);
-  } else {
+    INFO("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
+  }
+  else
+  {
     // since not taken, target addr will be the next instruction
     target_addr = get_pc(ucontext) + insn.length;
-    printf("[log]continue from %#lx\n", target_addr);
+    INFO("continue from %#lx", target_addr);
   }
   return std::make_pair(target_addr, taken);
 }
 
 std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
+}
+
+void logMessage(LogLevel level, const char *file, int line, const char *format, ...)
+{
+#ifdef LOG_LEVEL
+  if (level < LOG_LEVEL)
+  {
+    return;
+  }
+#endif
+  const char *levelStr[] = {"DEBUG", "INFO", "WARNING", "ERROR"};
+  const char *colorStr[] = {COLOR_DEBUG, COLOR_INFO, COLOR_WARNING, COLOR_ERROR};
+
+  printf("%s[%s:%d] %s: %s", colorStr[level], file, line, levelStr[level], COLOR_RESET);
+
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+  puts("");
+
+  if (level == LOG_ERROR)
+  {
+    exit(EXIT_FAILURE);
+  }
 }

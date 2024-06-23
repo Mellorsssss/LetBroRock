@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_compile_options("-w")
 
+add_definitions( -D LOG_LEVEL=LOG_WARNING)
+
 add_definitions( -D LOGGER_MAX_LOG_LEVEL_PRINTED=6 )
 add_definitions( -D LOGGER_PREFIX_LEVEL=2 )
 add_definitions( -D LOGGER_ENABLE_COLORS=1 )
