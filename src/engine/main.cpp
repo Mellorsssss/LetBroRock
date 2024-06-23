@@ -32,6 +32,8 @@ thread_local void *thread_dr_context = nullptr;
 
 thread_local int branch_cnt = 0;
 
+thread_local uint64_t breakpoint_addr = UNKNOWN_ADDR;
+
 // Mapping from fd of perf event to tid
 int perf_id_map[MAX_THREAD_NUM]{};
 
@@ -44,6 +46,21 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext);
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext);
 
 std::pair<branch, bool> find_next_unresolved_branch(uint64_t pc, thread_context &tcontext);
+
+void enable_perf_sampling(pid_t tid)
+{
+    struct sigaction sa;
+    sa.sa_sigaction = sampling_handler;
+    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGIO, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        return;
+    }
+
+    perf_events_enable(tid);
+}
 
 bool buffer_size()
 {
@@ -150,6 +167,7 @@ void set_breakpoint(pid_t tid, uint64_t addr)
 {
     struct perf_event_attr pe;
 
+    breakpoint_addr = addr;
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.type = PERF_TYPE_BREAKPOINT;
     pe.size = sizeof(struct perf_event_attr);
@@ -204,7 +222,7 @@ void set_breakpoint(pid_t tid, uint64_t addr)
     // reset the signal handler
     struct sigaction sa;
     sa.sa_sigaction = breakpoint_handler;
-    sa.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONESHOT | SA_RESTART;
+    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGTRAP, &sa, NULL) == -1)
     {
@@ -228,21 +246,11 @@ void set_breakpoint(pid_t tid, uint64_t addr)
 
 void remove_breakpoint(int perf_fd, uint64_t addr)
 {
+    breakpoint_addr = UNKNOWN_ADDR;
     if (close(perf_fd) != 0)
     {
         perror("close");
         exit(EXIT_FAILURE);
-    }
-
-    // reset the signal handler
-    struct sigaction sa;
-    sa.sa_sigaction = sampling_handler;
-    sa.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONESHOT | SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGIO, &sa, NULL) == -1)
-    {
-        perror("sigaction");
-        return;
     }
 
     printf("successfully remove breakpoint at %#lx of %d\n", addr, perf_fd);
@@ -257,6 +265,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     // we should disable the breakpoint at the immediately
     ucontext_t *uc = (ucontext_t *)ucontext;
     uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
+    if (pc != breakpoint_addr)
+    {
+        printf("real breakpoint %#lx is different from setted breakpoint addr %#lx\n", pc, breakpoint_addr);
+        remove_breakpoint(info->si_fd, pc);
+        signal_posthandle(old_set);
+
+        enable_perf_sampling(syscall(SYS_gettid));
+        return;
+    }
     remove_breakpoint(info->si_fd, pc);
 
     printf("si_code:%d\n", info->si_code);
@@ -273,9 +290,11 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         if (buffer_size() == 0)
         {
+            printf("buffer is full\n");
             buffer_reset();
-            perf_events_enable(tcontext.tid);
             signal_posthandle(old_set);
+
+            enable_perf_sampling(tcontext.tid);
             return;
         }
         else
@@ -292,8 +311,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     }
     else
     {
-        perf_events_enable(tcontext.tid);
         signal_posthandle(old_set);
+        enable_perf_sampling(tcontext.tid);
     }
 
     return;
@@ -337,7 +356,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     else
     {
         signal_posthandle(old_set);
-        perf_events_enable(target_pid);
+        enable_perf_sampling(target_pid);
     }
 }
 
@@ -378,7 +397,7 @@ __attribute__((constructor)) void preload_main()
         // Profiler process
         printf("Profiler process (PID: %d) executing other logic.\n", getpid());
 
-        std::vector<pid_t> tids = get_tids(pid, false);
+        std::vector<pid_t> tids = get_tids(pid, true);
         assert(tids.size() > 0 && "Target should has at least one thread.");
         printf("Profiler begin to trace %d\n", tids[0]);
 

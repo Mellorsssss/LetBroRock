@@ -207,7 +207,7 @@ int perf_events_enable(pid_t tid)
   pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
   pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-  pe.sample_period = 10;
+  pe.sample_period = 1000;
   pe.disabled = 1;
   pe.exclude_kernel = 1;
   pe.exclude_hv = 1;
@@ -234,7 +234,7 @@ int perf_events_enable(pid_t tid)
     perror("F_SETSIG");
     exit(EXIT_FAILURE);
   }
-  if (fcntl(perf_fd, F_SETFL, O_NONBLOCK | O_ASYNC))
+  if (fcntl(perf_fd, F_SETFL, (fcntl(perf_fd, F_GETFL, 0)) |O_NONBLOCK | O_ASYNC))
   {
     perror("F_SETFL");
     exit(EXIT_FAILURE);
@@ -351,7 +351,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   init_dr_mcontext(&mcontext, ucontext);
   instr_t d_insn;
   instr_init(dr_context, &d_insn);
-  byte *addr = (byte *)(ucontext->uc_mcontext.gregs[REG_RIP]);
+  byte *addr = (byte *)(get_pc(ucontext));
 
   if (decode(dr_context, addr, &d_insn) == nullptr)
   {
@@ -377,10 +377,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   else if (AMED_CATEGORY_RET == insn.categories[1])
   {
     assert(instr_is_return(&d_insn));
-    // puts("evaluate a ret instruction");
-    // assert(insn.argument_count <= 1 && "ret [imm] should contains no more than one argument.");
-    // ret will always unconditionally go to the stack top
-    // return std::make_pair(ucontext->uc_mcontext.gregs[REG_RSP], true);
   }
   else
   {
@@ -563,7 +559,11 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 
   if (taken)
   {
-    printf("[log]taken branch: %#lx -> %#lx\n", (uint64_t)ucontext->uc_mcontext.gregs[REG_RIP], target_addr);
+    printf("[log]taken branch: %#lx -> %#lx\n", get_pc(ucontext), target_addr);
+  } else {
+    // since not taken, target addr will be the next instruction
+    target_addr = get_pc(ucontext) + insn.length;
+    printf("[log]continue from %#lx\n", target_addr);
   }
   return std::make_pair(target_addr, taken);
 }
