@@ -3,6 +3,7 @@
 #include "dr_api.h"
 #include "dr_tools.h"
 #include "utils.h"
+#include "excutable_segments.h"
 #include <Logger.h>
 #include <bits/siginfo.h>
 #include <cassert>
@@ -31,11 +32,13 @@ constexpr int MAX_LBR_SIZE = 16;
 thread_local void *thread_dr_context = nullptr;
 
 thread_local int branch_cnt = 0;
+thread_local int branch_total_cnt = 0;
+thread_local int branch_static_cnt = 0;
+thread_local int branch_dyn_cnt = 0;
 
 thread_local uint64_t breakpoint_addr = UNKNOWN_ADDR;
 
-// Mapping from fd of perf event to tid
-int perf_id_map[MAX_THREAD_NUM]{};
+ExecutableSegments* executable_segments = nullptr;
 
 void set_breakpoint(pid_t tid, uint64_t addr);
 
@@ -74,6 +77,7 @@ bool buffer_full()
 
 void buffer_reset()
 {
+    branch_total_cnt += branch_cnt;
     branch_cnt = 0;
 }
 
@@ -95,25 +99,27 @@ bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tconte
             // handle the breakpoint
             if (br.to_addr == UNKNOWN_ADDR)
             {
-                DEBUG("find_next_unresolved_branch: Should set the breakpoint");
+                DEBUG("Should set the breakpoint");
                 return true;
             }
 
-            DEBUG("find_next_unresolved_branch: Branch is taken unconditionally");
+            DEBUG("Branch is taken unconditionally");
             if (buffer_size() == 0)
             {
+                buffer_reset();
                 return false;
             }
             else
             {
                 branch_cnt++;
+                branch_static_cnt++;
             }
 
             pc = br.to_addr;
         }
     }
 
-    assert(0 && "find_next_unresolved_branch: never hit");
+    assert(0 && "never hit");
     return false;
 }
 
@@ -263,8 +269,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 
     // we should disable the breakpoint at the immediately
     ucontext_t *uc = (ucontext_t *)ucontext;
-    uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
-    if (pc != breakpoint_addr)
+    uint64_t pc = get_pc(uc);
+    if (pc != breakpoint_addr || !executable_segments->isAddressInExecutableSegment(pc))
     {
         WARNING("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, breakpoint_addr);
         remove_breakpoint(info->si_fd, pc);
@@ -298,14 +304,19 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
         else
         {
             branch_cnt++;
+            branch_dyn_cnt++;
         }
     }
 
     bool ok = find_next_unresolved_branch(target_taken.first, br, tcontext);
+    
+    if (!executable_segments->isAddressInExecutableSegment(br.from_addr)) {
+        ERROR("breakpoint handler triggered at un-executable pc %lx", pc);
+    }
     if (ok)
     {
-        set_breakpoint(tcontext.tid, br.from_addr);
         signal_posthandle(old_set);
+        set_breakpoint(tcontext.tid, br.from_addr);
     }
     else
     {
@@ -336,8 +347,13 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     DEBUG("Sampling handler: the fd is %d, handled by %d", info->si_fd, syscall(SYS_gettid));
 
     // get PC
-    uint64_t pc = (uint64_t)uc->uc_mcontext.gregs[REG_RIP];
-    DEBUG("ip: %lx", pc);
+    uint64_t pc = get_pc(uc);
+    if (!executable_segments->isAddressInExecutableSegment(pc)) {
+        ERROR("sampling handler triggered at un-executable pc %lx", pc);
+        signal_posthandle(old_set);
+        enable_perf_sampling(target_pid);
+        return;
+    }
 
     thread_context tcontext{
         .tid = target_pid,
@@ -358,78 +374,81 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     }
 }
 
+std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
+{
+    std::vector<pid_t> tids = get_tids(pid, tid);
+    assert(tids.size() > 0 && "Target should has at least one thread.");
+
+    // send SIGTRAP to all the threads to trigger the bootstrap sampling handler
+    for (auto &tid : tids)
+    {
+        if (kill(tid, SIGTRAP) != 0)
+        {
+            WARNING("fail to bootstrap %d", tid);
+        }
+    }
+
+    return tids;
+}
+
+void stop_profiler()
+{
+    // TODO
+}
+
+void app_thread_exit_work()
+{
+    // TODO
+}
+
+/* main thread is designed to :
+ * 1. spawn writer thread for writing output file
+ * 2. periodically call start_profiler and stop_profiler
+ */
+void profiler_main_thread()
+{
+    pid_t pid = getpid();
+    pid_t tid = syscall(SYS_gettid);
+
+    usleep(1000); // sleep for 100 ms before the first start
+    while (true)
+    {
+        auto tids = start_profiler(pid, tid);
+
+        stop_profiler();
+        return;
+        // usleep(1000 * 1000000000000); // sleep for 100 ms
+    }
+}
+
+void profiler_writer_thread()
+{
+    // TODO: implement the logic
+}
+
 __attribute__((constructor)) void preload_main()
 {
-    pid_t pid = fork();
+    sleep(1);
+    executable_segments = new ExecutableSegments(false);
 
-    if (pid < 0)
+    // register handler of SIGIO for all threads
+    struct sigaction sa;
+    sa.sa_sigaction = bootstrap_sampling_handler;
+    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGTRAP, &sa, NULL) == -1)
     {
-        // Fork failed
-        perror("Profiler failed to fork >:|");
-        exit(EXIT_FAILURE);
+        perror("sigaction");
+        return;
     }
-    else if (pid == 0)
-    {
-        // register handler of SIGIO for all threads
-        struct sigaction sa;
-        sa.sa_sigaction = bootstrap_sampling_handler;
-        sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
-        sigemptyset(&sa.sa_mask);
-        if (sigaction(SIGIO, &sa, NULL) == -1)
-        {
-            perror("sigaction");
-            return;
-        }
+    std::thread t(profiler_main_thread);
+    t.detach(); // TODO: it seems a little dangerous
 
-        // Child process
-        // The child process will continue execution as normal, e.g: gaussDB will continue its work
-        atexit([]()
-               { 
+    atexit([]()
+           { 
+                app_thread_exit_work();
                 dr_standalone_exit();
-                INFO("Just for testing :D Hooked exit function"); exit(EXIT_SUCCESS); });
+                ERROR("the thread %d records %d(%d, %d) branches.", syscall(SYS_gettid), branch_total_cnt, branch_static_cnt, branch_dyn_cnt);
+                INFO("Just for testing :D Hooked exit function");});
 
-        INFO("Child process (PID: %d) continuing with current command.", getpid());
-    }
-    else
-    {
-        exit(EXIT_FAILURE);
-        // Profiler process
-        INFO("Profiler process (PID: %d) executing other logic.", getpid());
-
-        std::vector<pid_t> tids = get_tids(pid, true);
-        assert(tids.size() > 0 && "Target should has at least one thread.");
-        INFO("Profiler begin to trace %d", tids[0]);
-
-        for (auto &tid : tids)
-        {
-            if (kill(tid, SIGIO) != 0)
-            {
-                perror("pthread_kill");
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        int status;
-        WARNING("begin to wait for the pid");
-        waitpid(pid, &status, __WALL);
-        WARNING("succeed to wait for the pid");
-        if (errno != 0)
-        {
-            perror("waitpid");
-            exit(EXIT_FAILURE);
-        }
-
-        if (WIFEXITED(status))
-        {
-            INFO("Child process exited with status %d.", WEXITSTATUS(status));
-        }
-        else
-        {
-            ERROR("Child process did not exit normally.");
-        }
-
-        // Optionally, exit the parent process if it's not needed
-        WARNING("Profiler exits");
-        exit(EXIT_FAILURE);
-    }
 }
