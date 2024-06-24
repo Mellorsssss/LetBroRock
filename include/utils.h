@@ -68,7 +68,7 @@ void enable_perf_sampling(pid_t tid, int perf_fd);
 
 std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branch &br, ucontext_t &context);
 
-std::vector<pid_t> get_tids(pid_t target_pid, bool exclude_target);
+std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target);
 
 int perf_events_enable(pid_t tid);
 

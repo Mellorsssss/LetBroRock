@@ -46,8 +46,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
   amed_insn insn;
 
   // TODO: remove the internal malloc with memory pool
-  char *buffer = (char *)malloc(256);
-
   // TODO: partial decoding instructions non-branch instructions
   while (amed_decode_insn(pcontext, &insn))
   {
@@ -69,7 +67,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
     auto static_res = static_evaluate(tcontext, temp_pc, *pcontext, insn);
     if (!static_res.second)
     {
-      free(buffer);
       return std::make_pair(branch{
                                 .from_addr = temp_pc,
                                 .to_addr = static_res.first,
@@ -77,7 +74,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
                             true);
     }
 
-    free(buffer);
     // this branch needs to be evaluated dynamically
     return std::make_pair(branch{
                               .from_addr = temp_pc,
@@ -86,7 +82,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
                           true);
   }
 
-  free(buffer);
   return std::make_pair(branch{}, false);
 }
 
@@ -149,7 +144,7 @@ std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branc
   return std::make_pair(0, false);
 }
 
-std::vector<pid_t> get_tids(pid_t target_pid, bool exclue_target)
+std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target)
 {
   std::vector<pid_t> tids;
   std::unordered_set<pid_t> tids_set;
@@ -174,7 +169,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, bool exclue_target)
       {
         pid_t tid_number = std::atol(tid.c_str());
 
-        if (exclue_target && tid_number == target_pid)
+        if (exclue_target == tid_number || target_pid == tid_number)
           continue;
 
         if (tids_set.find(tid_number) == tids_set.end())
@@ -206,9 +201,8 @@ int perf_events_enable(pid_t tid)
   memset(&pe, 0, sizeof(struct perf_event_attr));
   pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
-  // pe.config = PERF_COUNT_HW_INSTRUCTIONS;
   pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
-  pe.sample_period = 5000,000;
+  pe.sample_period = 5,000,000;
   pe.disabled = 1;
   pe.exclude_kernel = 1;
   pe.exclude_hv = 1;
@@ -241,6 +235,7 @@ int perf_events_enable(pid_t tid)
     exit(EXIT_FAILURE);
   }
 
+  DEBUG("perf_events_enable: for %d->%d(fd: %d)", owner.pid, syscall(SYS_gettid), perf_fd);
   // open perf_event
   if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
   {
@@ -248,7 +243,6 @@ int perf_events_enable(pid_t tid)
     exit(EXIT_FAILURE);
   }
 
-  DEBUG("perf_events_enable: for %d->%d(fd: %d)", owner.pid, syscall(SYS_gettid), perf_fd);
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) != 0)
   {
     perror("PERF_EVENT_IOC_ENABLE");
@@ -322,6 +316,21 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
       {
         assert(0 && "direct control flow trasfer should only go to int address!");
       }
+      WARNING("statically evaluated address from immed: %#lx", target_addr);
+    }
+    else if (opnd_is_abs_addr(target_op)) {
+      target_addr = (uint64_t)opnd_compute_address(target_op, nullptr);
+      if (target_addr == 0) {
+        ERROR("fail to comput the addr");
+      }
+      WARNING("statically evaluated address from abs_addr: %#lx", target_addr);
+    }
+    else if (opnd_is_pc(target_op)) {
+      target_addr = (uint64_t)opnd_get_pc(target_op);
+      if (target_addr == 0) {
+        ERROR("fail to comput the addr");
+      }
+      // WARNING("statically evaluated address from pc: %#lx", target_addr);
     }
     else
     {
@@ -329,6 +338,7 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
     }
 
     instr_free(tcontext.dr_context, &d_insn);
+    WARNING("taken branch: %#lx -> %#lx", pc, target_addr);
     return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? true : false);
   }
   else
@@ -370,7 +380,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   else if (AMED_CATEGORY_CALL == insn.categories[1])
   {
     assert(instr_is_call(&d_insn));
-    puts("call instruction");
   }
   else if (AMED_CATEGORY_RET == insn.categories[1])
   {
@@ -554,9 +563,10 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   // handle the cbr
   instr_free(dr_context, &d_insn);
 
+  // WARNING("dynamically evaluated address %#lx", target_addr);
   if (taken)
   {
-    INFO("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
+    WARNING("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
   }
   else
   {
