@@ -62,6 +62,7 @@ private:
       if (!(lineStream >> pathname) || (exclude_shared_lib && pathname.find(".so") != std::string::npos))
       {
         WARNING("skip!");
+        WARNING("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
         continue;
       }
 

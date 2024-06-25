@@ -9,7 +9,8 @@ add_compile_options("-w")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
-add_definitions( -D LOG_LEVEL=LOG_DEBUG)
+add_definitions( -D LOG_LEVEL=LOG_INFO)
+# add_definitions( -D NO_STATIC)
 
 add_definitions( -D LOGGER_MAX_LOG_LEVEL_PRINTED=6 )
 add_definitions( -D LOGGER_PREFIX_LEVEL=2 )
@@ -27,7 +28,7 @@ target_include_directories(profiler PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJE
 target_compile_definitions(profiler PRIVATE LINUX X86_64)
 add_subdirectory(third_party)
 link_directories(${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/lib64/debug)
-target_link_libraries(profiler PRIVATE pthread AMED ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/lib64/release/libdynamorio.so)
+target_link_libraries(profiler PRIVATE pthread AMED ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/lib64/release/libdynamorio.so unwind unwind-generic)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     add_definitions(-D__x86_64__)

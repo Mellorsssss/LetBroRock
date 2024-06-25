@@ -9,16 +9,25 @@
 #include <cstring>
 #include <ctype.h>
 #include <dirent.h>
+#include <libunwind-ptrace.h>
+#include <libunwind.h>
+#include <libunwind-x86_64.h>
 #include <linux/hw_breakpoint.h>
 #include <string>
 #include <sys/syscall.h>
 #include <unordered_set>
+#include <sys/mman.h>
 
 #define X86
 
 long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu, int group_fd, unsigned long flags)
 {
   return syscall(__NR_perf_event_open, event_attr, pid, cpu, group_fd, flags);
+}
+
+uint64_t get_mmap_len()
+{
+  return sysconf(_SC_PAGESIZE) * (1 + RINGBUFFER_SIZE);
 }
 
 uint64_t get_pc(ucontext_t *ucontext)
@@ -97,6 +106,7 @@ void enable_perf_sampling(pid_t tid, int perf_fd)
 
 void disable_perf_sampling(pid_t tid, int perf_fd)
 {
+  WARNING("disable_perf_sampling %d from %d", perf_fd, tid);
   if (ioctl(perf_fd, PERF_EVENT_IOC_DISABLE, 0) == -1)
   {
     perror("ioctl(PERF_EVENT_IOC_DISABLE)");
@@ -195,24 +205,51 @@ std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target)
   return tids;
 }
 
-int perf_events_enable(pid_t tid)
+int perf_events_enable(pid_t tid, void *&buf)
 {
+  errno = 0;
   struct perf_event_attr pe;
   memset(&pe, 0, sizeof(struct perf_event_attr));
   pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
-  pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
-  pe.sample_period = 5,000,000;
+  pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+  pe.sample_period = 10,000;
   pe.disabled = 1;
+  pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
+  pe.sample_type = PERF_SAMPLE_IP;
   pe.exclude_kernel = 1;
   pe.exclude_hv = 1;
-  pe.wakeup_events = 1;
 
   int perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0);
-  if (perf_fd == -1)
+  if (perf_fd < 0)
   {
-    perror("perf_event_open");
+    WARNING("the perf_fd is %d", perf_fd);
+    perror("here :perf_event_open");
     return -1;
+  }
+
+  size_t mmap_len = get_mmap_len();
+  buf = mmap(NULL, mmap_len, PROT_READ, MAP_SHARED, perf_fd, 0);
+  if (buf == MAP_FAILED)
+  {
+    perror("mmap");
+    ERROR("fail to mmap");
+  }
+  else
+  {
+    WARNING("mmap succ");
+  }
+
+  if (fcntl(perf_fd, F_SETFL, O_RDWR | O_NONBLOCK | O_ASYNC) != 0)
+  {
+    perror("F_SETFL");
+    exit(EXIT_FAILURE);
+  }
+
+  if (fcntl(perf_fd, F_SETSIG, SIGIO) != 0)
+  {
+    perror("F_SETSIG");
+    exit(EXIT_FAILURE);
   }
 
   struct f_owner_ex owner;
@@ -224,18 +261,8 @@ int perf_events_enable(pid_t tid)
     perror("F_SETOWN_EX");
     exit(EXIT_FAILURE);
   }
-  if (fcntl(perf_fd, F_SETSIG, SIGIO) != 0)
-  {
-    perror("F_SETSIG");
-    exit(EXIT_FAILURE);
-  }
-  if (fcntl(perf_fd, F_SETFL, (fcntl(perf_fd, F_GETFL, 0)) | O_NONBLOCK | O_ASYNC))
-  {
-    perror("F_SETFL");
-    exit(EXIT_FAILURE);
-  }
 
-  DEBUG("perf_events_enable: for %d->%d(fd: %d)", owner.pid, syscall(SYS_gettid), perf_fd);
+  DEBUG("perf_events_enable: for %d(fd: %d)", owner.pid, perf_fd);
   // open perf_event
   if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
   {
@@ -249,6 +276,11 @@ int perf_events_enable(pid_t tid)
     exit(EXIT_FAILURE);
   }
 
+  WARNING("exit perf_events open with errno %d", errno);
+  if (errno)
+  {
+    ERROR("fail in perf_events enable");
+  }
   return perf_fd;
 }
 
@@ -284,6 +316,9 @@ void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
 
 std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
 {
+#ifdef NO_STATIC
+  return std::make_pair(UNKNOWN_ADDR, true);
+#endif
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
   if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
   {
@@ -318,16 +353,20 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
       }
       WARNING("statically evaluated address from immed: %#lx", target_addr);
     }
-    else if (opnd_is_abs_addr(target_op)) {
+    else if (opnd_is_abs_addr(target_op))
+    {
       target_addr = (uint64_t)opnd_compute_address(target_op, nullptr);
-      if (target_addr == 0) {
+      if (target_addr == 0)
+      {
         ERROR("fail to comput the addr");
       }
       WARNING("statically evaluated address from abs_addr: %#lx", target_addr);
     }
-    else if (opnd_is_pc(target_op)) {
+    else if (opnd_is_pc(target_op))
+    {
       target_addr = (uint64_t)opnd_get_pc(target_op);
-      if (target_addr == 0) {
+      if (target_addr == 0)
+      {
         ERROR("fail to comput the addr");
       }
       // WARNING("statically evaluated address from pc: %#lx", target_addr);
@@ -603,5 +642,32 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
   if (level == LOG_ERROR)
   {
     exit(EXIT_FAILURE);
+  }
+}
+
+void print_backtrace()
+{
+  return;
+  unw_cursor_t cursor;
+  unw_context_t context;
+
+  unw_getcontext(&context);
+  unw_init_local(&cursor, &context);
+
+  while (unw_step(&cursor) > 0)
+  {
+    unw_word_t offset, pc;
+    char symbol[512];
+
+    unw_get_reg(&cursor, UNW_REG_IP, &pc);
+
+    if (unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset) == 0)
+    {
+      WARNING("[%lx] %s + 0x%lx\n", (unsigned long)pc, symbol, (unsigned long)offset);
+    }
+    else
+    {
+      WARNING("[%lx] <unknown>\n", (unsigned long)pc);
+    }
   }
 }

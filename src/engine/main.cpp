@@ -2,8 +2,8 @@
 #include "amed.h"
 #include "dr_api.h"
 #include "dr_tools.h"
-#include "utils.h"
 #include "excutable_segments.h"
+#include "utils.h"
 #include <Logger.h>
 #include <bits/siginfo.h>
 #include <cassert>
@@ -35,10 +35,24 @@ thread_local int branch_cnt = 0;
 thread_local int branch_total_cnt = 0;
 thread_local int branch_static_cnt = 0;
 thread_local int branch_dyn_cnt = 0;
+thread_local bool thread_inited = false;
+typedef enum _thread_state{
+    SAMPLING,
+    BREAKPOINT, 
+} thread_state;
+thread_local thread_state state = thread_state::SAMPLING;
 
 thread_local uint64_t breakpoint_addr = UNKNOWN_ADDR;
 
-ExecutableSegments* executable_segments = nullptr;
+// perf_events related data structure
+thread_local void* rbuf = nullptr;
+struct perf_ip_sample
+{
+    struct perf_event_header header;
+    uint64_t ip;
+};
+
+ExecutableSegments *executable_segments = nullptr;
 
 void set_breakpoint(pid_t tid, uint64_t addr);
 
@@ -52,17 +66,8 @@ std::pair<branch, bool> find_next_unresolved_branch(uint64_t pc, thread_context 
 
 void enable_perf_sampling(pid_t tid)
 {
-    struct sigaction sa;
-    sa.sa_sigaction = sampling_handler;
-    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGIO, &sa, NULL) == -1)
-    {
-        perror("sigaction");
-        return;
-    }
-
-    perf_events_enable(tid);
+    state = thread_state::SAMPLING;
+    perf_events_enable(tid, rbuf);
 }
 
 bool buffer_size()
@@ -123,36 +128,39 @@ bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tconte
     return false;
 }
 
-void signal_prehandle(sigset_t &new_set, sigset_t &old_set)
+void signal_prehandle(sigset_t &new_set, sigset_t &old_set, int sig)
 {
-    // return;
     sigfillset(&new_set); // 设置new_set为包含所有信号
-    if (sigprocmask(SIG_BLOCK, &new_set, &old_set) < 0)
+    if (pthread_sigmask(SIG_BLOCK, &new_set, &old_set) < 0)
     {
-        perror("sigprocmask");
+        perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
 }
 
 void signal_posthandle(sigset_t &old_set)
 {
-    // return;
     if (sigprocmask(SIG_SETMASK, &old_set, NULL) < 0)
     {
-        perror("sigprocmask");
+        perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
 }
 
 void bootstrap_sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
-    DEBUG("First Sampling handler:%d open the real handler at %#lx", syscall(SYS_gettid), get_pc((ucontext_t *)ucontext));
+    DEBUG("First Sampling handler:%d open the real handler at %#lx with fd %d", syscall(SYS_gettid), get_pc((ucontext_t *)ucontext), info->si_fd);
+    info->si_fd;
+    sigset_t new_set, old_set;
+    signal_prehandle(new_set, old_set, SIGIO);
+
+    disable_perf_sampling(syscall(SYS_gettid), info->si_fd);
+
     struct sigaction sa;
     sa.sa_sigaction = sampling_handler;
-    // sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
     sa.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGIO, &sa, NULL) == -1)
+    if (sigaction(SIGIO, &sa, NULL) != 0)
     {
         perror("sigaction");
         return;
@@ -165,11 +173,13 @@ void bootstrap_sampling_handler(int signum, siginfo_t *info, void *ucontext)
         ERROR("fail to set the isa mode.");
     }
 
-    perf_events_enable(syscall(SYS_gettid));
+    signal_posthandle(old_set);
+    perf_events_enable(syscall(SYS_gettid), rbuf);
 }
 
 void set_breakpoint(pid_t tid, uint64_t addr)
 {
+    state = thread_state::BREAKPOINT;
     struct perf_event_attr pe;
 
     breakpoint_addr = addr;
@@ -222,18 +232,7 @@ void set_breakpoint(pid_t tid, uint64_t addr)
     {
         perror("F_SETFL");
         exit(EXIT_FAILURE);
-    }
-
-    // reset the signal handler
-    struct sigaction sa;
-    sa.sa_sigaction = breakpoint_handler;
-    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGTRAP, &sa, NULL) == -1)
-    {
-        perror("sigaction");
-        return;
-    }
+    }  
 
     DEBUG("successfully set breakpoint at %lx", pe.bp_addr);
     if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
@@ -251,35 +250,36 @@ void set_breakpoint(pid_t tid, uint64_t addr)
 
 void remove_breakpoint(int perf_fd, uint64_t addr)
 {
-    breakpoint_addr = UNKNOWN_ADDR;
+    // TODO: maybe this method could be replaced with disable_perf_sampling
+    DEBUG("successfully remove breakpoint at %#lx of %d", addr, perf_fd);
     if (close(perf_fd) != 0)
     {
         perror("close");
         exit(EXIT_FAILURE);
     }
-
-    DEBUG("successfully remove breakpoint at %#lx of %d", addr, perf_fd);
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    print_backtrace();
     assert(errno != EINTR && "breakpoint should not hit the syscall");
     sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set);
+    signal_prehandle(new_set, old_set, SIGIO);
 
     // we should disable the breakpoint at the immediately
     ucontext_t *uc = (ucontext_t *)ucontext;
     uint64_t pc = get_pc(uc);
+
+    remove_breakpoint(info->si_fd, pc);
     if (pc != breakpoint_addr || !executable_segments->isAddressInExecutableSegment(pc))
     {
-        WARNING("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, breakpoint_addr);
-        remove_breakpoint(info->si_fd, pc);
+        ERROR("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, breakpoint_addr);
+        enable_perf_sampling(syscall(SYS_gettid));
         signal_posthandle(old_set);
 
-        enable_perf_sampling(syscall(SYS_gettid));
         return;
     }
-    remove_breakpoint(info->si_fd, pc);
+    breakpoint_addr = UNKNOWN_ADDR;
 
     DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, syscall(SYS_gettid));
 
@@ -296,9 +296,10 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
         {
             DEBUG("buffer is full");
             buffer_reset();
-            signal_posthandle(old_set);
 
             enable_perf_sampling(tcontext.tid);
+            signal_posthandle(old_set);
+
             return;
         }
         else
@@ -309,8 +310,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     }
 
     bool ok = find_next_unresolved_branch(target_taken.first, br, tcontext);
-    
-    if (!executable_segments->isAddressInExecutableSegment(br.from_addr)) {
+
+    if (!executable_segments->isAddressInExecutableSegment(br.from_addr))
+    {
         ERROR("breakpoint handler triggered at un-executable pc %lx", pc);
     }
     if (ok)
@@ -320,8 +322,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     }
     else
     {
-        signal_posthandle(old_set);
         enable_perf_sampling(tcontext.tid);
+        signal_posthandle(old_set);
     }
 
     return;
@@ -329,18 +331,50 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    if (state != thread_state::SAMPLING) {
+        WARNING("redudant sampling handler(probably from previous fd), just return");
+        return;
+    }
+    
+    print_backtrace();
+    if (!thread_inited)
+    {
+        // init the dr_context
+        thread_dr_context = dr_standalone_init();
+        if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
+        {
+            ERROR("fail to set the isa mode.");
+        }
+        thread_inited = true;
+        
+        // temporarily mmap the rbuf
+        rbuf = mmap(NULL, get_mmap_len(), PROT_READ, MAP_SHARED, info->si_fd, 0);
+        if (rbuf == MAP_FAILED) {
+            perror("mmap");
+            ERROR("fail to mmap");
+        }
+    }
+    pid_t target_pid = syscall(SYS_gettid);
+    
+    long long count;
+    if (read(info->si_fd, &count, sizeof(long long)) > 0) {
+        ERROR("the count %d", count);
+        // ERROR("read error:%d", info->si_fd)void*;
+    }
+
+    disable_perf_sampling(target_pid, info->si_fd);
+
     // trick: if sampling handler interrupt a syscall, we just simply return
     if (errno == EINTR)
     {
         errno = 0;
         WARNING("Sampling handler mitakenly interrupt a syscall, just return");
+        munmap(rbuf, get_mmap_len());
         return;
     }
-    pid_t target_pid = syscall(SYS_gettid);
-    disable_perf_sampling(target_pid, info->si_fd);
 
     sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set);
+    signal_prehandle(new_set, old_set, SIGIO);
 
     ucontext_t *uc = (ucontext_t *)ucontext;
 
@@ -348,10 +382,32 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
     // get PC
     uint64_t pc = get_pc(uc);
-    if (!executable_segments->isAddressInExecutableSegment(pc)) {
-        ERROR("sampling handler triggered at un-executable pc %lx", pc);
-        signal_posthandle(old_set);
+    uint64_t offset = sysconf(_SC_PAGESIZE);
+    DEBUG("Sampling handler: try to read the buf");
+
+    if (rbuf == nullptr) {
+        ERROR("fail to read from nullptr buffer");
+    }
+
+    perf_ip_sample *sample = (perf_ip_sample*)((uint8_t *)rbuf + offset);
+    DEBUG("Sampling handler: try to get the ip");
+    // 过滤一下记录
+    if (sample->header.type == PERF_RECORD_SAMPLE)
+    {
+        // 得到IP值
+        WARNING("the ip is %#lx sampled from %#lx\n", sample->ip, pc);
+    } else {
+        ERROR("we should get a perf record sample here");
+    }
+    DEBUG("Sampling handler: get the ip");
+
+    pc = sample->ip;
+    if (!executable_segments->isAddressInExecutableSegment(pc))
+    {
+        ERROR("Sampling handler triggered at un-executable pc %lx", pc);
         enable_perf_sampling(target_pid);
+        signal_posthandle(old_set);
+        munmap(rbuf, get_mmap_len());
         return;
     }
 
@@ -369,23 +425,24 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     }
     else
     {
-        signal_posthandle(old_set);
         enable_perf_sampling(target_pid);
+        signal_posthandle(old_set);
     }
+    
+    munmap(rbuf, get_mmap_len());
 }
 
 std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
 {
     std::vector<pid_t> tids = get_tids(pid, tid);
     assert(tids.size() > 0 && "Target should has at least one thread.");
+    WARNING("main :%d and current %d", pid, tid);
 
-    // send SIGTRAP to all the threads to trigger the bootstrap sampling handler
     for (auto &tid : tids)
     {
-        if (kill(tid, SIGTRAP) != 0)
-        {
-            WARNING("fail to bootstrap %d", tid);
-        }
+        WARNING("try to enable perf events for %d", tid);
+        void* _;
+        perf_events_enable(tid, _);
     }
 
     return tids;
@@ -410,7 +467,10 @@ void profiler_main_thread()
     pid_t pid = getpid();
     pid_t tid = syscall(SYS_gettid);
 
-    usleep(1000); // sleep for 100 ms before the first start
+    sigset_t new_set, old_set;
+    signal_prehandle(new_set, old_set, SIGTRAP);
+
+    // usleep(1000); // sleep for 100 ms before the first start
     while (true)
     {
         auto tids = start_profiler(pid, tid);
@@ -419,6 +479,8 @@ void profiler_main_thread()
         return;
         // usleep(1000 * 1000000000000); // sleep for 100 ms
     }
+
+    return;
 }
 
 void profiler_writer_thread()
@@ -428,13 +490,22 @@ void profiler_writer_thread()
 
 __attribute__((constructor)) void preload_main()
 {
-    sleep(1);
-    executable_segments = new ExecutableSegments(false);
+    executable_segments = new ExecutableSegments(true);
 
     // register handler of SIGIO for all threads
     struct sigaction sa;
-    sa.sa_sigaction = bootstrap_sampling_handler;
-    sa.sa_flags = SA_SIGINFO | SA_ONESHOT | SA_RESTART;
+    sa.sa_sigaction = sampling_handler;
+    sa.sa_flags = SA_SIGINFO;// | SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGIO, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        return;
+    }
+
+    // register handler of SIGTRAP for all threads
+    sa.sa_sigaction = breakpoint_handler;
+    sa.sa_flags = SA_SIGINFO;// | SA_RESTART;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGTRAP, &sa, NULL) == -1)
     {
@@ -449,6 +520,5 @@ __attribute__((constructor)) void preload_main()
                 app_thread_exit_work();
                 dr_standalone_exit();
                 ERROR("the thread %d records %d(%d, %d) branches.", syscall(SYS_gettid), branch_total_cnt, branch_static_cnt, branch_dyn_cnt);
-                INFO("Just for testing :D Hooked exit function");});
-
+                INFO("Just for testing :D Hooked exit function"); });
 }
