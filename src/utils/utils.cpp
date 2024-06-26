@@ -31,16 +31,23 @@ uint64_t get_mmap_len()
 
 uint64_t get_pc(ucontext_t *ucontext)
 {
-  // TODO: support more archs
+#if defined(__x86_64__)
   return (uint64_t)(ucontext->uc_mcontext.gregs[REG_RIP]);
+#elif defined(__aarch64__)
+  return (uint64_t)(ucontext->uc_mcontext.pc);
+#endif
 }
 
 std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
 {
   amed_context context;
-  // TODO: support more arch
+#if defined(__x86_64__)
   context.architecture = AMED_ARCHITECTURE_X86;
   context.machine_mode = AMED_MACHINE_MODE_64;
+#elif defined(__aarch64__)
+  context.architecture = AMED_ARCHITECTURE_AARCH64;
+  context.machine_mode = AMED_MACHINE_MODE_64;
+#endif
 
   context.length = INT32_MAX;
   context.address = (uint8_t *)pc;
@@ -115,9 +122,13 @@ std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const 
   /* allocate buffer for formatter */
   amed_context acontext;
 
-  // TODO: support more arch
+#if defined(__x86_64__)
   acontext.architecture = AMED_ARCHITECTURE_X86;
   acontext.machine_mode = AMED_MACHINE_MODE_64;
+#elif defined(__aarch64__)
+  acontext.architecture = AMED_ARCHITECTURE_AARCH64;
+  acontext.machine_mode = AMED_MACHINE_MODE_64;
+#endif
   acontext.length = INT32_MAX;
   acontext.address = (uint8_t *)br.from_addr;
 
@@ -286,6 +297,7 @@ void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
   mcontext->size = sizeof(dr_mcontext_t);
   mcontext->flags = DR_MC_ALL;
 
+#if defined(__x86_64__)
   mcontext->xdi = ucontext->uc_mcontext.gregs[REG_RDI];
   mcontext->xsi = ucontext->uc_mcontext.gregs[REG_RSI];
   mcontext->xbp = ucontext->uc_mcontext.gregs[REG_RBP];
@@ -296,6 +308,42 @@ void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
   mcontext->xdx = ucontext->uc_mcontext.gregs[REG_RDX];
   mcontext->xip = (byte *)ucontext->uc_mcontext.gregs[REG_RIP];
   mcontext->xflags = ucontext->uc_mcontext.gregs[REG_EFL];
+#elif defined(__aarch64__)
+  mcontext->r0 = ucontext->uc_mcontext.regs[0];
+  mcontext->r1 = ucontext->uc_mcontext.regs[1];
+  mcontext->r2 = ucontext->uc_mcontext.regs[2];
+  mcontext->r3 = ucontext->uc_mcontext.regs[3];
+  mcontext->r4 = ucontext->uc_mcontext.regs[4];
+  mcontext->r5 = ucontext->uc_mcontext.regs[5];
+  mcontext->r6 = ucontext->uc_mcontext.regs[6];
+  mcontext->r7 = ucontext->uc_mcontext.regs[7];
+  mcontext->r8 = ucontext->uc_mcontext.regs[8];
+  mcontext->r9 = ucontext->uc_mcontext.regs[9];
+  mcontext->r10 = ucontext->uc_mcontext.regs[10];
+  mcontext->r11 = ucontext->uc_mcontext.regs[11];
+  mcontext->r12 = ucontext->uc_mcontext.regs[12];
+  mcontext->r13 = ucontext->uc_mcontext.regs[13];
+  mcontext->r14 = ucontext->uc_mcontext.regs[14];
+  mcontext->r15 = ucontext->uc_mcontext.regs[15];
+  mcontext->r16 = ucontext->uc_mcontext.regs[16];
+  mcontext->r17 = ucontext->uc_mcontext.regs[17];
+  mcontext->r18 = ucontext->uc_mcontext.regs[18];
+  mcontext->r19 = ucontext->uc_mcontext.regs[19];
+  mcontext->r20 = ucontext->uc_mcontext.regs[20];
+  mcontext->r21 = ucontext->uc_mcontext.regs[21];
+  mcontext->r22 = ucontext->uc_mcontext.regs[22];
+  mcontext->r23 = ucontext->uc_mcontext.regs[23];
+  mcontext->r24 = ucontext->uc_mcontext.regs[24];
+  mcontext->r25 = ucontext->uc_mcontext.regs[25];
+  mcontext->r26 = ucontext->uc_mcontext.regs[26];
+  mcontext->r27 = ucontext->uc_mcontext.regs[27];
+  mcontext->r28 = ucontext->uc_mcontext.regs[28];
+  mcontext->r29 = ucontext->uc_mcontext.regs[29];
+  mcontext->r30 = ucontext->uc_mcontext.regs[30];
+  mcontext->r31 = ucontext->uc_mcontext.regs[31];
+  mcontext->pc = (byte *)ucontext->uc_mcontext.pc;
+  mcontext->xflags = ucontext->uc_mcontext.pstate;
+#endif
 }
 
 std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
@@ -374,7 +422,7 @@ std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed
 {
 #if defined(__x86_64__)
   return evaluate_x86(dr_context, context, insn, ucontext);
-#elif define(__arm__)
+#elif define(aarch64)
   return evaluate_arm(dr_context, context, insn, ucontext);
 #endif
 }
@@ -589,6 +637,170 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 
 std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
+//TODO(guichuan): determin if an cti instruction is taken
+#if defined(aarch64)
+  assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
+
+  dr_mcontext_t mcontext;
+  init_dr_mcontext(&mcontext, ucontext);
+  instr_t d_insn;
+  instr_init(dr_context, &d_insn);
+  byte *addr = (byte *)(get_pc(ucontext));
+
+  if (decode(dr_context, addr, &d_insn) == nullptr)
+  {
+    ERROR("fail to decode the instruction using dynamorio");
+  }
+  else
+  {
+    // instr_disassemble(dr_context, &d_insn, STDOUT);
+    DEBUG("\nsucceed to decode the instruction using dynamorio");
+  }
+
+  // judge what kind of the instruction is
+  if (AMED_CATEGORY_BRANCH == insn.categories[1])
+  {
+    assert(instr_is_cbr(&d_insn) || instr_is_ubr(&d_insn) || instr_is_mbr(&d_insn));
+  }
+  else if (AMED_CATEGORY_CALL == insn.categories[1])
+  {
+    assert(instr_is_call(&d_insn));
+  }
+  else if (AMED_CATEGORY_RET == insn.categories[1])
+  {
+    assert(instr_is_return(&d_insn));
+  }
+  else
+  {
+    puts("interworking branch.");
+  }
+
+  opnd_t target_op = instr_get_target(&d_insn);
+  app_pc target_address = nullptr;
+  uint64_t target_addr = UNKNOWN_ADDR;
+  if (opnd_is_memory_reference(target_op))
+  {
+    DEBUG("evaluate_arm: is memory ref");
+  }
+  else if (opnd_is_pc(target_op))
+  {
+    DEBUG("evaluate_arm: is pc");
+  }
+  else if (opnd_is_reg(target_op))
+  {
+    DEBUG("evaluate_arm: is reg");
+  }
+
+  // dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
+
+  if (opnd_is_immed(target_op))
+  {
+    if (opnd_is_immed_int(target_op))
+    {
+      target_addr = opnd_get_immed_int(target_op);
+    }
+    else
+    {
+      assert(0 && "direct control flow trasfer should only go to int address!");
+    }
+  }
+  else if (opnd_is_pc(target_op))
+  {
+    target_address = opnd_get_pc(target_op); // TODO: is this always offset?
+    if (target_address == nullptr)
+    {
+      ERROR("fail to compute the address of operand");
+    }
+    target_addr = (uint64_t)(target_address);
+  }
+  else if (opnd_is_reg(target_op))
+  {
+    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext) + insn.length; // TODO: is this always offset?
+  }
+  else
+  {
+    target_address = opnd_compute_address(target_op, &mcontext);
+    if (target_address == nullptr)
+    {
+      ERROR("fail to compute the address of operand");
+    }
+    target_addr = (uint64_t)(target_address);
+  }
+
+  if (target_addr == UNKNOWN_ADDR)
+  {
+    puts("fail to get the target address of the operand");
+    exit(EXIT_FAILURE);
+  }
+  else
+  {
+    DEBUG("the target address of the current instruction is %#lx", target_addr);
+  }
+
+  bool taken = true;
+  if (instr_is_cbr(&d_insn))
+  {
+    uint32_t eflags = mcontext.xflags;
+
+    switch (instr_get_opcode(&d_insn))
+    {
+    // TODO:
+    case OP_b:
+    case OP_bl:
+    case OP_blr:
+    case OP_br:
+    case OP_blrab:
+    case OP_blrabz:
+    case OP_braaz:
+    case OP_brab:
+    case OP_brabz:
+      taken = true;
+      break;
+
+    // TODO: following OP code should be handled seperately
+    case OP_bcond:
+    case OP_cbnz:
+    case OP_cbz:
+    case OP_tbnz:
+    case OP_tbz:
+      // TODO: handle the conditonal jump
+      taken = true;
+      break;
+    default:
+      // Handle other conditional branches as needed
+      assert(0 && "unhandled jump instruction.");
+      break;
+    }
+
+    std::string log_str = "the conditional branch is ";
+    if (!taken)
+      log_str += "not ";
+    log_str += "taken";
+    DEBUG("%s", log_str.c_str());
+  }
+  else
+  {
+    DEBUG("the unconditional branch is taken");
+  }
+
+  // handle the cbr
+  instr_free(dr_context, &d_insn);
+
+  // WARNING("dynamically evaluated address %#lx", target_addr);
+  if (taken)
+  {
+    WARNING("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
+  }
+  else
+  {
+    // since not taken, target addr will be the next instruction
+    target_addr = get_pc(ucontext) + insn.length;
+    INFO("continue from %#lx", target_addr);
+  }
+  return std::make_pair(target_addr, taken);
+#else
+  return std::make_pair(UNKNOWN_ADDR, false);
+#endif
 }
 
 void logMessage(LogLevel level, const char *file, int line, const char *format, ...)

@@ -4,22 +4,6 @@
 #include <libunwind.h>
 #include <string.h>
 
-#if defined(__arm__)
-#if !defined(__BIONIC_HAVE_UCONTEXT_T)
-// The Current version of the Android <signal.h> doesn't define ucontext_t.
-#include <asm/sigcontext.h> // Ensure 'struct sigcontext' is defined.
-// Machine context at the time a signal was raised.
-typedef struct ucontext
-{
-  uint32_t uc_flags;
-  struct ucontext *uc_link;
-  stack_t uc_stack;
-  struct sigcontext uc_mcontext;
-  uint32_t uc_sigmask;
-} ucontext_t;
-#endif // !__BIONIC_HAVE_UCONTEXT_T
-#endif // defined(__arm__)
-
 class ThreadUnwind
 {
 public:
@@ -84,24 +68,10 @@ private:
   inline void extract_from_context(void *sigcontext)
   {
     unw_tdep_context_t *context = reinterpret_cast<unw_tdep_context_t *>(&context_);
-#if defined(__arm__)
+#if defined(__aarch64__)
+#include <sys/ucontext.h>
     const ucontext_t *uc = reinterpret_cast<const ucontext_t *>(sigcontext);
-    context->regs[0] = uc->uc_mcontext.arm_r0;
-    context->regs[1] = uc->uc_mcontext.arm_r1;
-    context->regs[2] = uc->uc_mcontext.arm_r2;
-    context->regs[3] = uc->uc_mcontext.arm_r3;
-    context->regs[4] = uc->uc_mcontext.arm_r4;
-    context->regs[5] = uc->uc_mcontext.arm_r5;
-    context->regs[6] = uc->uc_mcontext.arm_r6;
-    context->regs[7] = uc->uc_mcontext.arm_r7;
-    context->regs[8] = uc->uc_mcontext.arm_r8;
-    context->regs[9] = uc->uc_mcontext.arm_r9;
-    context->regs[10] = uc->uc_mcontext.arm_r10;
-    context->regs[11] = uc->uc_mcontext.arm_fp;
-    context->regs[12] = uc->uc_mcontext.arm_ip;
-    context->regs[13] = uc->uc_mcontext.arm_sp;
-    context->regs[14] = uc->uc_mcontext.arm_lr;
-    context->regs[15] = uc->uc_mcontext.arm_pc;
+    memcpy(context, uc, sizeof(ucontext_t)); 
 #elif defined(__x86_64__)
 #include <sys/ucontext.h>
     typedef struct ucontext ucontext_t;

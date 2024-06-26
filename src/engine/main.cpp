@@ -53,6 +53,7 @@ thread_local uint64_t breakpoint_addr = UNKNOWN_ADDR;
 
 thread_local ThreadUnwind thread_unwind_util;
 thread_local StackLBREntry thread_stack_lbr_entry;
+thread_local StackLBRBuffer* thread_buffer{nullptr};
 
 // perf_events related data structure
 thread_local void *rbuf = nullptr;
@@ -353,7 +354,11 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
         // init the dr_context
         thread_dr_context = dr_standalone_init();
+#if defined(__x86Z_64__)
         if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
+#elif defined(__aarch64__)
+        if (!dr_set_isa_mode(thread_dr_context, DR_ISA_ARM_A64, nullptr))
+#endif
         {
             ERROR("fail to set the isa mode.");
         }
