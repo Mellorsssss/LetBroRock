@@ -2,9 +2,10 @@
 #include "amed.h"
 #include "dr_api.h"
 #include "dr_tools.h"
-#include "excutable_segments.h"
+#include "executable_segments.h"
+#include "stack_lbr_utils.h"
+#include "unwind.h"
 #include "utils.h"
-#include <Logger.h>
 #include <bits/siginfo.h>
 #include <cassert>
 #include <fcntl.h>
@@ -22,12 +23,12 @@
 #include <sys/types.h>
 #include <sys/user.h>
 #include <sys/wait.h>
+#include <thread>
 #include <ucontext.h>
 #include <unistd.h>
 #include <unordered_map>
 
 constexpr int MAX_THREAD_NUM = 200;
-constexpr int MAX_LBR_SIZE = 16;
 
 thread_local void *thread_dr_context = nullptr;
 
@@ -35,17 +36,26 @@ thread_local int branch_cnt = 0;
 thread_local int branch_total_cnt = 0;
 thread_local int branch_static_cnt = 0;
 thread_local int branch_dyn_cnt = 0;
+
+/* thread state machine
+ * When a thread first call sampling_handler, it will set `thread_inited` to true
+ * When `state` is BREAKPOINT, thread can't call sampling handler
+ */
 thread_local bool thread_inited = false;
-typedef enum _thread_state{
+typedef enum _thread_state
+{
     SAMPLING,
-    BREAKPOINT, 
+    BREAKPOINT,
 } thread_state;
 thread_local thread_state state = thread_state::SAMPLING;
 
 thread_local uint64_t breakpoint_addr = UNKNOWN_ADDR;
 
+thread_local ThreadUnwind thread_unwind_util;
+thread_local StackLBREntry thread_stack_lbr_entry;
+
 // perf_events related data structure
-thread_local void* rbuf = nullptr;
+thread_local void *rbuf = nullptr;
 struct perf_ip_sample
 {
     struct perf_event_header header;
@@ -70,58 +80,76 @@ void enable_perf_sampling(pid_t tid)
     perf_events_enable(tid, rbuf);
 }
 
-bool buffer_size()
+bool stack_lbr_entry_full()
 {
-    return MAX_LBR_SIZE - branch_cnt;
+    return thread_stack_lbr_entry.is_full();
 }
 
-bool buffer_full()
-{
-    return MAX_LBR_SIZE == branch_cnt;
-}
-
-void buffer_reset()
+void stack_lbr_entry_reset()
 {
     branch_total_cnt += branch_cnt;
     branch_cnt = 0;
+    thread_stack_lbr_entry.reset();
 }
 
+void add_to_stack_lbr_entry(uint64_t from_addr, uint64_t to_addr)
+{
+    thread_stack_lbr_entry.add_branch(from_addr, to_addr);
+}
+
+void set_stack_size(uint8_t size)
+{
+    thread_stack_lbr_entry.set_stack_size(size);
+}
+
+/**
+ * iterate instructions from `pc`.
+ * If instruction is not cti, keep iterating;
+ * If instruction is cti
+ *    If instruction can be evaluated statically(jmp, call), add to stack_lbr_entry
+ *    Else return false to set a breakpoint
+ * ATTENTION:
+ * For the last trace, a breakpoint is set to get the call stack.
+ */
 bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tcontext)
 {
     while (true)
     {
         DEBUG("Branch PC: %#lx", pc);
-        auto res = find_next_branch(tcontext, pc);
-        if (!res.second)
+        auto [temp_br, found] = find_next_branch(tcontext, pc);
+        if (!found)
         {
-            INFO("Fail to find a branch until the end of the code from %#lx.", pc);
+            WARNING("Fail to find a branch until the end of the code from %#lx.", pc);
             return false;
         }
-        else
+
+        br = temp_br;
+        ucontext_t _{};
+        auto [target, taken] = check_branch_if_taken(tcontext, br, _, true);
+
+        // handle the breakpoint since the branch can't be evaluated statically
+        if (target == UNKNOWN_ADDR)
         {
-            br = res.first;
+            DEBUG("Should set the breakpoint");
+            return true;
+        }
 
-            // handle the breakpoint
-            if (br.to_addr == UNKNOWN_ADDR)
-            {
-                DEBUG("Should set the breakpoint");
-                return true;
-            }
-
+        // branch is statically taken
+        if (taken)
+        {
             DEBUG("Branch is taken unconditionally");
-            if (buffer_size() == 0)
+            if (stack_lbr_entry_full()) // last trace
             {
-                buffer_reset();
-                return false;
+                DEBUG("stack lbr entry is full, we set the final breakpoint for the call stack");
+                return true;
             }
             else
             {
-                branch_cnt++;
-                branch_static_cnt++;
+                add_to_stack_lbr_entry(br.from_addr, target);
             }
-
-            pc = br.to_addr;
         }
+
+        pc = target;
     }
 
     assert(0 && "never hit");
@@ -130,7 +158,7 @@ bool find_next_unresolved_branch(uint64_t pc, branch &br, thread_context &tconte
 
 void signal_prehandle(sigset_t &new_set, sigset_t &old_set, int sig)
 {
-    sigfillset(&new_set); // 设置new_set为包含所有信号
+    sigfillset(&new_set);
     if (pthread_sigmask(SIG_BLOCK, &new_set, &old_set) < 0)
     {
         perror("pthread_sigmask");
@@ -145,36 +173,6 @@ void signal_posthandle(sigset_t &old_set)
         perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
-}
-
-void bootstrap_sampling_handler(int signum, siginfo_t *info, void *ucontext)
-{
-    DEBUG("First Sampling handler:%d open the real handler at %#lx with fd %d", syscall(SYS_gettid), get_pc((ucontext_t *)ucontext), info->si_fd);
-    info->si_fd;
-    sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set, SIGIO);
-
-    disable_perf_sampling(syscall(SYS_gettid), info->si_fd);
-
-    struct sigaction sa;
-    sa.sa_sigaction = sampling_handler;
-    sa.sa_flags = SA_SIGINFO | SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGIO, &sa, NULL) != 0)
-    {
-        perror("sigaction");
-        return;
-    }
-
-    // init the dr_context
-    thread_dr_context = dr_standalone_init();
-    if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
-    {
-        ERROR("fail to set the isa mode.");
-    }
-
-    signal_posthandle(old_set);
-    perf_events_enable(syscall(SYS_gettid), rbuf);
 }
 
 void set_breakpoint(pid_t tid, uint64_t addr)
@@ -232,7 +230,7 @@ void set_breakpoint(pid_t tid, uint64_t addr)
     {
         perror("F_SETFL");
         exit(EXIT_FAILURE);
-    }  
+    }
 
     DEBUG("successfully set breakpoint at %lx", pe.bp_addr);
     if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
@@ -262,6 +260,7 @@ void remove_breakpoint(int perf_fd, uint64_t addr)
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 {
     print_backtrace();
+
     assert(errno != EINTR && "breakpoint should not hit the syscall");
     sigset_t new_set, old_set;
     signal_prehandle(new_set, old_set, SIGIO);
@@ -289,13 +288,23 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
         .dr_context = thread_dr_context,
     };
 
-    std::pair<uint64_t, bool> target_taken = record_branch_if_taken(tcontext, br, *uc);
-    if (target_taken.second)
+    auto [target, taken] = check_branch_if_taken(tcontext, br, *uc, false);
+    if (taken)
     {
-        if (buffer_size() == 0)
+        if (stack_lbr_entry_full())
         {
-            DEBUG("buffer is full");
-            buffer_reset();
+            WARNING("call stack sample check point");
+            thread_unwind_util.reset();
+
+            uint8_t real_frame_size;
+            if (!thread_unwind_util.unwind((siginfo_t *)info, ucontext, thread_stack_lbr_entry.get_stack_buffer(), MAX_FRAME_SIZE, real_frame_size))
+            {
+                ERROR("fail to get the call stack");
+            }
+
+            thread_stack_lbr_entry.set_stack_size(real_frame_size);
+
+            stack_lbr_entry_reset();
 
             enable_perf_sampling(tcontext.tid);
             signal_posthandle(old_set);
@@ -304,16 +313,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
         }
         else
         {
-            branch_cnt++;
-            branch_dyn_cnt++;
+            add_to_stack_lbr_entry(pc, target);
         }
     }
 
-    bool ok = find_next_unresolved_branch(target_taken.first, br, tcontext);
+    bool ok = find_next_unresolved_branch(target, br, tcontext);
 
     if (!executable_segments->isAddressInExecutableSegment(br.from_addr))
     {
-        ERROR("breakpoint handler triggered at un-executable pc %lx", pc);
+        ERROR("breakpoint handler triggered at un-executable pc %lx", br.from_addr);
     }
     if (ok)
     {
@@ -331,14 +339,18 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
-    if (state != thread_state::SAMPLING) {
+    if (state != thread_state::SAMPLING)
+    {
         WARNING("redudant sampling handler(probably from previous fd), just return");
         return;
     }
-    
+
     print_backtrace();
     if (!thread_inited)
     {
+        // init the thread_stack_lbr_entry
+        stack_lbr_entry_reset();
+
         // init the dr_context
         thread_dr_context = dr_standalone_init();
         if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
@@ -346,19 +358,21 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
             ERROR("fail to set the isa mode.");
         }
         thread_inited = true;
-        
+
         // temporarily mmap the rbuf
         rbuf = mmap(NULL, get_mmap_len(), PROT_READ, MAP_SHARED, info->si_fd, 0);
-        if (rbuf == MAP_FAILED) {
+        if (rbuf == MAP_FAILED)
+        {
             perror("mmap");
             ERROR("fail to mmap");
         }
     }
     pid_t target_pid = syscall(SYS_gettid);
-    
+
     long long count;
-    if (read(info->si_fd, &count, sizeof(long long)) > 0) {
-        ERROR("the count %d", count);
+    if (read(info->si_fd, &count, sizeof(long long)) > 0)
+    {
+        // ERROR("the count %d", count);
         // ERROR("read error:%d", info->si_fd)void*;
     }
 
@@ -385,18 +399,19 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     uint64_t offset = sysconf(_SC_PAGESIZE);
     DEBUG("Sampling handler: try to read the buf");
 
-    if (rbuf == nullptr) {
+    if (rbuf == nullptr)
+    {
         ERROR("fail to read from nullptr buffer");
     }
 
-    perf_ip_sample *sample = (perf_ip_sample*)((uint8_t *)rbuf + offset);
+    perf_ip_sample *sample = (perf_ip_sample *)((uint8_t *)rbuf + offset);
     DEBUG("Sampling handler: try to get the ip");
-    // 过滤一下记录
     if (sample->header.type == PERF_RECORD_SAMPLE)
     {
-        // 得到IP值
         WARNING("the ip is %#lx sampled from %#lx\n", sample->ip, pc);
-    } else {
+    }
+    else
+    {
         ERROR("we should get a perf record sample here");
     }
     DEBUG("Sampling handler: get the ip");
@@ -428,7 +443,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
         enable_perf_sampling(target_pid);
         signal_posthandle(old_set);
     }
-    
+
     munmap(rbuf, get_mmap_len());
 }
 
@@ -441,7 +456,7 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
     for (auto &tid : tids)
     {
         WARNING("try to enable perf events for %d", tid);
-        void* _;
+        void *_;
         perf_events_enable(tid, _);
     }
 
@@ -483,11 +498,6 @@ void profiler_main_thread()
     return;
 }
 
-void profiler_writer_thread()
-{
-    // TODO: implement the logic
-}
-
 __attribute__((constructor)) void preload_main()
 {
     executable_segments = new ExecutableSegments(true);
@@ -495,7 +505,7 @@ __attribute__((constructor)) void preload_main()
     // register handler of SIGIO for all threads
     struct sigaction sa;
     sa.sa_sigaction = sampling_handler;
-    sa.sa_flags = SA_SIGINFO;// | SA_RESTART;
+    sa.sa_flags = SA_SIGINFO; // | SA_RESTART;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGIO, &sa, NULL) == -1)
     {
@@ -505,7 +515,7 @@ __attribute__((constructor)) void preload_main()
 
     // register handler of SIGTRAP for all threads
     sa.sa_sigaction = breakpoint_handler;
-    sa.sa_flags = SA_SIGINFO;// | SA_RESTART;
+    sa.sa_flags = SA_SIGINFO; // | SA_RESTART;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGTRAP, &sa, NULL) == -1)
     {

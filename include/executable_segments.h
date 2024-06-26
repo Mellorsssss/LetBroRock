@@ -1,3 +1,5 @@
+#ifndef EXECUTABLE_SEGMENTS
+#define EXECUTABLE_SEGMENTS
 #include "utils.h"
 #include <fcntl.h>
 #include <fstream>
@@ -61,13 +63,13 @@ private:
 
       if (!(lineStream >> pathname) || (exclude_shared_lib && pathname.find(".so") != std::string::npos))
       {
-        WARNING("skip!");
-        WARNING("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
+        DEBUG("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
         continue;
       }
 
       segment_map[seg_start] = seg_end;
-      WARNING("new executable segment: %#lx-%#lx", seg_start, seg_end);
+      DEBUG("new executable segment: %#lx-%#lx", seg_start, seg_end);
     }
   }
 };
+#endif

@@ -9,14 +9,8 @@ add_compile_options("-w")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
-add_definitions( -D LOG_LEVEL=LOG_INFO)
+add_definitions( -D LOG_LEVEL=LOG_DEBUG)
 # add_definitions( -D NO_STATIC)
-
-add_definitions( -D LOGGER_MAX_LOG_LEVEL_PRINTED=6 )
-add_definitions( -D LOGGER_PREFIX_LEVEL=2 )
-add_definitions( -D LOGGER_ENABLE_COLORS=1 )
-add_definitions( -D LOGGER_ENABLE_COLORS_ON_USER_HEADER=0 )
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB SOURCES "src/engine/*.cpp" "src/utils/*.cpp")

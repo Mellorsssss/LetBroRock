@@ -42,7 +42,7 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
 typedef struct _branch
 {
     uintptr_t from_addr;
-    uintptr_t to_addr;
+    uintptr_t to_addr; // if to_addr is UNKNOWN_ADDR, it means this branch needs a breakpoint
 } branch;
 
 typedef struct _thread_context
@@ -70,7 +70,7 @@ void disable_perf_sampling(pid_t tid, int perf_fd);
 
 void enable_perf_sampling(pid_t tid, int perf_fd);
 
-std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branch &br, ucontext_t &context);
+std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const branch &br, ucontext_t &context, bool static_eval);
 
 std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target);
 

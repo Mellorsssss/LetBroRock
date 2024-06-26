@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "Logger.h"
 #include "dr_api.h"
 #include "dr_ir_decode.h"
 #include "dr_ir_instr.h"
@@ -10,13 +9,13 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <libunwind-ptrace.h>
-#include <libunwind.h>
 #include <libunwind-x86_64.h>
+#include <libunwind.h>
 #include <linux/hw_breakpoint.h>
 #include <string>
+#include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unordered_set>
-#include <sys/mman.h>
 
 #define X86
 
@@ -43,7 +42,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
   context.architecture = AMED_ARCHITECTURE_X86;
   context.machine_mode = AMED_MACHINE_MODE_64;
 
-  // TODO: set to precise length. But actually there must exist a control-flow transfering instruciton
   context.length = INT32_MAX;
   context.address = (uint8_t *)pc;
 
@@ -54,7 +52,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
 
   amed_insn insn;
 
-  // TODO: remove the internal malloc with memory pool
   // TODO: partial decoding instructions non-branch instructions
   while (amed_decode_insn(pcontext, &insn))
   {
@@ -70,17 +67,6 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
     if (!is_control_flow_transfer(insn))
     {
       continue;
-    }
-
-    // test if the branch could be statically evaluated
-    auto static_res = static_evaluate(tcontext, temp_pc, *pcontext, insn);
-    if (!static_res.second)
-    {
-      return std::make_pair(branch{
-                                .from_addr = temp_pc,
-                                .to_addr = static_res.first,
-                            },
-                            true);
     }
 
     // this branch needs to be evaluated dynamically
@@ -121,14 +107,12 @@ void disable_perf_sampling(pid_t tid, int perf_fd)
   return;
 }
 
-std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branch &br, ucontext_t &context)
+std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const branch &br, ucontext_t &context, bool static_eval)
 {
   amed_formatter formatter = {0};
   formatter.lower_case = true;
 
   /* allocate buffer for formatter */
-  // TODO: remove the internal malloc with memory pool
-  char *buffer = (char *)malloc(256);
   amed_context acontext;
 
   // TODO: support more arch
@@ -137,18 +121,18 @@ std::pair<uint64_t, bool> record_branch_if_taken(thread_context &tcontext, branc
   acontext.length = INT32_MAX;
   acontext.address = (uint8_t *)br.from_addr;
 
-  DEBUG("record_branch_if_taken: decode the instruction at %lx", br.from_addr);
+  DEBUG("check_branch_if_taken: decode the instruction at %lx", br.from_addr);
   amed_insn insn;
   if (amed_decode_insn(&acontext, &insn))
   {
-    // assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
-    if (!is_control_flow_transfer(insn))
-      return std::make_pair(UNKNOWN_ADDR, false);
-    return evaluate(tcontext.dr_context, acontext, insn, &context);
+    assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
+    // if (!is_control_flow_transfer(insn))
+    // return std::make_pair(UNKNOWN_ADDR, false);
+    return static_eval ? static_evaluate(tcontext, br.from_addr, acontext, insn) : evaluate(tcontext.dr_context, acontext, insn, &context);
   }
   else
   {
-    ERROR("record_branch_if_taken: fail to decode the instruction");
+    ERROR("check_branch_if_taken: fail to decode the cti");
   }
 
   return std::make_pair(0, false);
@@ -213,7 +197,7 @@ int perf_events_enable(pid_t tid, void *&buf)
   pe.type = PERF_TYPE_HARDWARE;
   pe.size = sizeof(struct perf_event_attr);
   pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-  pe.sample_period = 10,000;
+  pe.sample_period = 10, 000;
   pe.disabled = 1;
   pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
   pe.sample_type = PERF_SAMPLE_IP;
@@ -378,17 +362,21 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
 
     instr_free(tcontext.dr_context, &d_insn);
     WARNING("taken branch: %#lx -> %#lx", pc, target_addr);
-    return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? true : false);
+    return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? false : true);
   }
   else
   {
-    return std::make_pair(UNKNOWN_ADDR, true);
+    return std::make_pair(UNKNOWN_ADDR, false);
   }
 }
 
 std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
+#if defined(__x86_64__)
   return evaluate_x86(dr_context, context, insn, ucontext);
+#elif define(__arm__)
+  return evaluate_arm(dr_context, context, insn, ucontext);
+#endif
 }
 
 std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
@@ -506,10 +494,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
     case OP_jbe_short:
       taken = (mcontext.xflags & EFLAGS_CF) || (mcontext.xflags & EFLAGS_ZF); // CF=1 or ZF=1
       break;
-    // TODO: it seems dynamorio doesn't support this
-    // case OP_jc:
-    //   taken = mcontext.xflags & EFLAGS_CF; // CF=1
-    //   break;
     case OP_jecxz:
       taken = mcontext.xcx & 0xFFFFFFFF;
       break;
@@ -529,17 +513,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
     case OP_jnbe_short:
       taken = !(mcontext.xflags & EFLAGS_CF) && !(mcontext.xflags & EFLAGS_ZF); // CF=0 and ZF=0
       break;
-    // TODO:
-    // case OP_jnc:
-    //   taken = !(mcontext.xflags & EFLAGS_CF); // CF=0
-    //   break;
-    // TODO:
-    // case OP_jng:
-    //   taken = (mcontext.xflags & EFLAGS_ZF) || ((mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF)); // ZF=1 or SF!=OF
-    //   break;
-    // case OP_jnge:
-    //   taken = (mcontext.xflags & EFLAGS_SF) != (mcontext.xflags & EFLAGS_OF); // SF!=OF
-    //   break;
     case OP_jnl:
     case OP_jnl_short:
       taken = (mcontext.xflags & EFLAGS_SF) == (mcontext.xflags & EFLAGS_OF); // SF=OF
@@ -572,8 +545,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
     case OP_jp_short:
       taken = mcontext.xflags & EFLAGS_PF; // PF=1
       break;
-      // TODO: it seems dynamorio doesn't support this case OP_jpe:
-      // TODO: it seems dynamorio doesn't support this case OP_jpo:
     case OP_js:
     case OP_js_short:
       taken = mcontext.xflags & EFLAGS_SF; // SF=1
