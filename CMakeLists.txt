@@ -9,7 +9,8 @@ add_compile_options("-w")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
-add_definitions( -D LOG_LEVEL=LOG_DEBUG)
+add_definitions( -D LOG_LEVEL=LOG_ERROR)
+# add_definitions( -D MY_DEBUG)
 # add_definitions( -D NO_STATIC)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

@@ -7,7 +7,7 @@
 
 constexpr int MAX_LBR_SIZE = 16;
 constexpr int MAX_FRAME_SIZE = 16;
-constexpr int MAX_STACK_LBR_BUFFER_SIZE = 16 * 1024; // 16KB
+constexpr int MAX_STACK_LBR_BUFFER_SIZE = 1024; // 1KB
 
 /**
  * StackLBREntry contains a single run of complete branch tracing and
@@ -51,7 +51,8 @@ public:
   uint64_t *get_stack_buffer() { return stack_; }
   void set_stack_size(uint8_t sz) { stack_sz_ = sz; }
 
-  bool is_full() const {
+  bool is_full() const
+  {
     return branch_sz_ >= MAX_LBR_SIZE;
   }
 
@@ -78,7 +79,8 @@ public:
 
   void reset()
   {
-    if (stack_sz_) {
+    if (stack_sz_)
+    {
       debug_output();
     }
 
@@ -89,6 +91,7 @@ public:
 
   void debug_output()
   {
+#if defined(MY_DEBUG)
     // this function is only used for debug
     assert(stack_sz_ > 0 && "call stack should at least contains one sample");
     printf("-- call stack --\n");
@@ -102,6 +105,7 @@ public:
     {
       printf("%#lx/%#lx\n", branch_[i << 1], branch_[(i << 1) + 1]);
     }
+#endif
   }
 
 private:
@@ -114,9 +118,9 @@ private:
 class StackLBRBuffer
 {
 public:
-  StackLBRBuffer(int cap) : cap_(cap)
+  StackLBRBuffer() : cap_(MAX_STACK_LBR_BUFFER_SIZE)
   {
-    buffer_ = new uint8_t[cap];
+    buffer_ = new uint8_t[cap_];
     cur_ = buffer_;
   }
 
@@ -127,7 +131,7 @@ public:
     cur_ = nullptr;
   }
 
-  uint8_t *get_current() const
+  uint8_t *&get_current()
   {
     return cur_;
   }

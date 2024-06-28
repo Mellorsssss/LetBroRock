@@ -24,11 +24,6 @@ long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu, int
   return syscall(__NR_perf_event_open, event_attr, pid, cpu, group_fd, flags);
 }
 
-uint64_t get_mmap_len()
-{
-  return sysconf(_SC_PAGESIZE) * (1 + RINGBUFFER_SIZE);
-}
-
 uint64_t get_pc(ucontext_t *ucontext)
 {
 #if defined(__x86_64__)
@@ -38,7 +33,7 @@ uint64_t get_pc(ucontext_t *ucontext)
 #endif
 }
 
-std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
+bool find_next_branch(ThreadContext &tcontext, uint64_t pc)
 {
   amed_context context;
 #if defined(__x86_64__)
@@ -76,15 +71,12 @@ std::pair<branch, bool> find_next_branch(thread_context &tcontext, uint64_t pc)
       continue;
     }
 
-    // this branch needs to be evaluated dynamically
-    return std::make_pair(branch{
-                              .from_addr = temp_pc,
-                              .to_addr = UNKNOWN_ADDR,
-                          },
-                          true);
+    // find a branch and fill in its from address
+    tcontext.set_from_addr(temp_pc);
+    return true;
   }
 
-  return std::make_pair(branch{}, false);
+  return false;
 }
 
 void enable_perf_sampling(pid_t tid, int perf_fd)
@@ -97,24 +89,7 @@ void enable_perf_sampling(pid_t tid, int perf_fd)
   }
 }
 
-void disable_perf_sampling(pid_t tid, int perf_fd)
-{
-  WARNING("disable_perf_sampling %d from %d", perf_fd, tid);
-  if (ioctl(perf_fd, PERF_EVENT_IOC_DISABLE, 0) == -1)
-  {
-    perror("ioctl(PERF_EVENT_IOC_DISABLE)");
-    exit(EXIT_FAILURE);
-  }
-
-  if (close(perf_fd) != 0)
-  {
-    perror("close");
-    exit(EXIT_FAILURE);
-  }
-  return;
-}
-
-std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const branch &br, ucontext_t &context, bool static_eval)
+std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontext_t &context, bool static_eval)
 {
   amed_formatter formatter = {0};
   formatter.lower_case = true;
@@ -122,6 +97,7 @@ std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const 
   /* allocate buffer for formatter */
   amed_context acontext;
 
+  uint64_t from_addr = tcontext.get_branch().from_addr;
 #if defined(__x86_64__)
   acontext.architecture = AMED_ARCHITECTURE_X86;
   acontext.machine_mode = AMED_MACHINE_MODE_64;
@@ -130,16 +106,29 @@ std::pair<uint64_t, bool> check_branch_if_taken(thread_context &tcontext, const 
   acontext.machine_mode = AMED_MACHINE_MODE_64;
 #endif
   acontext.length = INT32_MAX;
-  acontext.address = (uint8_t *)br.from_addr;
+  acontext.address = (uint8_t *)from_addr;
 
-  DEBUG("check_branch_if_taken: decode the instruction at %lx", br.from_addr);
+  DEBUG("check_branch_if_taken: decode the instruction at %lx", from_addr);
   amed_insn insn;
   if (amed_decode_insn(&acontext, &insn))
   {
     assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
     // if (!is_control_flow_transfer(insn))
     // return std::make_pair(UNKNOWN_ADDR, false);
-    return static_eval ? static_evaluate(tcontext, br.from_addr, acontext, insn) : evaluate(tcontext.dr_context, acontext, insn, &context);
+    auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn) : evaluate(tcontext.get_dr_context(), acontext, insn, &context);
+    if (taken)
+    {
+      if (static_eval)
+      {
+        tcontext.add_static_branch();
+      }
+      else
+      {
+        tcontext.add_dynamic_branch();
+      }
+    }
+
+    return std::make_pair(target, taken);
   }
   else
   {
@@ -198,85 +187,6 @@ std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target)
 
   INFO("%s", log_str.c_str());
   return tids;
-}
-
-int perf_events_enable(pid_t tid, void *&buf)
-{
-  errno = 0;
-  struct perf_event_attr pe;
-  memset(&pe, 0, sizeof(struct perf_event_attr));
-  pe.type = PERF_TYPE_HARDWARE;
-  pe.size = sizeof(struct perf_event_attr);
-  pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-  pe.sample_period = 10, 000;
-  pe.disabled = 1;
-  pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
-  pe.sample_type = PERF_SAMPLE_IP;
-  pe.exclude_kernel = 1;
-  pe.exclude_hv = 1;
-
-  int perf_fd = syscall(__NR_perf_event_open, &pe, tid, -1, -1, 0);
-  if (perf_fd < 0)
-  {
-    WARNING("the perf_fd is %d", perf_fd);
-    perror("here :perf_event_open");
-    return -1;
-  }
-
-  size_t mmap_len = get_mmap_len();
-  buf = mmap(NULL, mmap_len, PROT_READ, MAP_SHARED, perf_fd, 0);
-  if (buf == MAP_FAILED)
-  {
-    perror("mmap");
-    ERROR("fail to mmap");
-  }
-  else
-  {
-    WARNING("mmap succ");
-  }
-
-  if (fcntl(perf_fd, F_SETFL, O_RDWR | O_NONBLOCK | O_ASYNC) != 0)
-  {
-    perror("F_SETFL");
-    exit(EXIT_FAILURE);
-  }
-
-  if (fcntl(perf_fd, F_SETSIG, SIGIO) != 0)
-  {
-    perror("F_SETSIG");
-    exit(EXIT_FAILURE);
-  }
-
-  struct f_owner_ex owner;
-  owner.type = F_OWNER_TID;
-  owner.pid = tid;
-
-  if (fcntl(perf_fd, F_SETOWN_EX, &owner) != 0)
-  {
-    perror("F_SETOWN_EX");
-    exit(EXIT_FAILURE);
-  }
-
-  DEBUG("perf_events_enable: for %d(fd: %d)", owner.pid, perf_fd);
-  // open perf_event
-  if (ioctl(perf_fd, PERF_EVENT_IOC_RESET, 0) != 0)
-  {
-    perror("PERF_EVENT_IOC_RESET");
-    exit(EXIT_FAILURE);
-  }
-
-  if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) != 0)
-  {
-    perror("PERF_EVENT_IOC_ENABLE");
-    exit(EXIT_FAILURE);
-  }
-
-  WARNING("exit perf_events open with errno %d", errno);
-  if (errno)
-  {
-    ERROR("fail in perf_events enable");
-  }
-  return perf_fd;
 }
 
 bool is_control_flow_transfer(amed_insn &insn)
@@ -346,7 +256,7 @@ void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
 #endif
 }
 
-std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
+std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
 {
 #ifdef NO_STATIC
   return std::make_pair(UNKNOWN_ADDR, true);
@@ -355,10 +265,10 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
   if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
   {
     instr_t d_insn;
-    instr_init(tcontext.dr_context, &d_insn);
+    instr_init(tcontext.get_dr_context(), &d_insn);
 
     DEBUG("static_evaluate: try to decode the instruction");
-    if (decode(tcontext.dr_context, (byte *)pc, &d_insn) == nullptr)
+    if (decode(tcontext.get_dr_context(), (byte *)pc, &d_insn) == nullptr)
     {
       ERROR("fail to decode the instruction using dynamorio");
     }
@@ -408,7 +318,7 @@ std::pair<uint64_t, bool> static_evaluate(thread_context &tcontext, uint64_t pc,
       DEBUG("static_evaluate: the target is not imm");
     }
 
-    instr_free(tcontext.dr_context, &d_insn);
+    instr_free(tcontext.get_dr_context(), &d_insn);
     WARNING("taken branch: %#lx -> %#lx", pc, target_addr);
     return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? false : true);
   }
@@ -637,7 +547,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 
 std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
-//TODO(guichuan): determin if an cti instruction is taken
+// TODO(guichuan): determin if an cti instruction is taken
 #if defined(aarch64)
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
@@ -803,31 +713,6 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, 
 #endif
 }
 
-void logMessage(LogLevel level, const char *file, int line, const char *format, ...)
-{
-#ifdef LOG_LEVEL
-  if (level < LOG_LEVEL)
-  {
-    return;
-  }
-#endif
-  const char *levelStr[] = {"DEBUG", "INFO", "WARNING", "ERROR"};
-  const char *colorStr[] = {COLOR_DEBUG, COLOR_INFO, COLOR_WARNING, COLOR_ERROR};
-
-  printf("%s[%s:%d] %s: %s", colorStr[level], file, line, levelStr[level], COLOR_RESET);
-
-  va_list args;
-  va_start(args, format);
-  vprintf(format, args);
-  va_end(args);
-  puts("");
-
-  if (level == LOG_ERROR)
-  {
-    exit(EXIT_FAILURE);
-  }
-}
-
 void print_backtrace()
 {
   return;
@@ -853,4 +738,9 @@ void print_backtrace()
       WARNING("[%lx] <unknown>\n", (unsigned long)pc);
     }
   }
+}
+
+int tgkill(pid_t group_id, pid_t tid, int signo)
+{
+  return syscall(SYS_tgkill, group_id, tid, signo);
 }
