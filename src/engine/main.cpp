@@ -354,7 +354,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
         // init the dr_context
         thread_dr_context = dr_standalone_init();
-#if defined(__x86Z_64__)
+#if defined(__x86_64__)
         if (!dr_set_isa_mode(thread_dr_context, DR_ISA_AMD64, nullptr))
 #elif defined(__aarch64__)
         if (!dr_set_isa_mode(thread_dr_context, DR_ISA_ARM_A64, nullptr))
