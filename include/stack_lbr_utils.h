@@ -58,12 +58,17 @@ public:
 
   bool add_branch(uint64_t from_addr, uint64_t to_addr)
   {
-    assert(branch_sz_ < MAX_LBR_SIZE && "there is no space to add new branch");
+    if (branch_sz_ >= MAX_LBR_SIZE)
+    {
+      WARNING("there is no space to add new branch");
+      return false;
+    }
 
     uint64_t ind = branch_sz_ << 1;
     branch_[ind] = from_addr;
     branch_[ind + 1] = to_addr;
     branch_sz_++;
+    return true;
   }
 
   // get the size of all data in bytes
@@ -130,6 +135,11 @@ public:
     buffer_ = nullptr;
     cur_ = nullptr;
   }
+  
+  void reset() {
+    // it's unecessary to memset the memory
+    cur_ = buffer_;
+  }
 
   uint8_t *&get_current()
   {
@@ -166,7 +176,7 @@ public:
       uint64_t *branch = reinterpret_cast<uint64_t *>(current);
       for (uint8_t i = 0; i < branch_sz; ++i)
       {
-        os << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
+        os << std::hex << std::showbase << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
       }
       current += branch_sz * 2 * sizeof(uint64_t);
     }
@@ -175,7 +185,6 @@ public:
 private:
   uint8_t *buffer_{nullptr};
   uint8_t *cur_{nullptr}; // cur_ points to the current position of buffer_
-  int size_{0};
   int cap_{0};
 };
 #endif
