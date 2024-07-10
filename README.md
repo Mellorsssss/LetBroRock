@@ -26,3 +26,12 @@ mkdir build
 cd build
 cmake .. && make -j8
 ```
+
+## How to run
+There are 2 ways to use LBR:
+1. Use the profiler with `LD_PRELOAD`
+```
+LD_PRELOAD=libprofiler.so your_program
+```
+
+2. Directly link the `libprofiler.so` to your program.
