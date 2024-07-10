@@ -138,7 +138,7 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
   return std::make_pair(0, false);
 }
 
-std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target)
+std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target, int max_size)
 {
   std::vector<pid_t> tids;
   std::unordered_set<pid_t> tids_set;
@@ -156,7 +156,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target)
     }
 
     bool has_new_tid = false;
-    while ((entry = readdir(dir)) != NULL)
+    while ((entry = readdir(dir)) != NULL && tids.size() < max_size)
     {
       std::string tid(entry->d_name);
       if (std::all_of(tid.begin(), tid.end(), isdigit))
@@ -647,51 +647,206 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, 
     DEBUG("the target address of the current instruction is %#lx", target_addr);
   }
 
-  bool taken = true;
-  if (instr_is_cbr(&d_insn))
+  auto condition_holds = [](uint8_t cond, const dr_mcontext_t* mcontext) -> bool 
   {
-    uint32_t eflags = mcontext.xflags;
+    assert(cond <= 0xF && "provided cond must less than 4 bits!");
 
-    switch (instr_get_opcode(&d_insn))
+    bool res = false;
+    bool n = mcontext->xflags >> 31 & 1;
+    bool z = mcontext->xflags >> 30 & 1;
+    bool c = mcontext->xflags >> 29 & 1;
+    bool v = mcontext->xflags >> 28 & 1;
+    switch (cond >> 1) 
     {
-    // TODO:
-    case OP_b:
-    case OP_bl:
-    case OP_blr:
-    case OP_br:
-    case OP_blrab:
-    case OP_blrabz:
-    case OP_braaz:
-    case OP_brab:
-    case OP_brabz:
-      taken = true;
-      break;
-
-    // TODO: following OP code should be handled seperately
-    case OP_bcond:
-    case OP_cbnz:
-    case OP_cbz:
-    case OP_tbnz:
-    case OP_tbz:
-      // TODO: handle the conditonal jump
-      taken = true;
-      break;
-    default:
-      // Handle other conditional branches as needed
-      assert(0 && "unhandled jump instruction.");
-      break;
+      case 0x0:
+        res = z;
+        break;
+      case 0x1:
+        res = c;
+        break;
+      case 0x2:
+        res = n;
+        break;
+      case 0x3:
+        res = v;
+        break;
+      case 0x4:
+        res = c && !z;
+        break;
+      case 0x5:
+        res = n == v;
+        break;
+      case 0x6:
+        res = n == v && !z;
+        break;
+      case 0x7:
+        res = true;
+        break;
+      default:
+        assert(0 && "provided cond must less than 4 bits!")
     }
 
-    std::string log_str = "the conditional branch is ";
-    if (!taken)
-      log_str += "not ";
-    log_str += "taken";
-    DEBUG("%s", log_str.c_str());
-  }
-  else
+    if ((cond & 1) == 1 && cond != 0xF) {
+      res = !res;
+    }
+
+    return res;
+  };
+
+  auto sign_extend = [](uint64_t origin, uint8_t bit_length) -> int64_t {
+    return reinterpret_cast<int64_t>(origin) << (64 - bit_length) >> (64 - bit_length);
+  };
+
+  bool taken = true;
+  uint32_t raw_inst = *(uint32_t)addr;
+  switch (instr_get_opcode(&d_insn))
   {
-    DEBUG("the unconditional branch is taken");
+    case OP_b:
+    {
+      WARNING("instruction \"b\" is a static branch");
+      int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+      taken = true;
+      target_addr = mcontext.pc + imm;
+      break;
+    }
+    case OP_bl:
+    {
+      WARNING("instruction \"bl\" is a static branch");
+      int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+      taken = true;
+      target_addr = mcontext.pc + imm;
+      break;
+    }
+    case OP_blr:
+    {
+      uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+      taken = true;
+      target_addr = ucontext->uc_context.regs[reg_id];
+      break;
+    }
+    case OP_br:
+    {
+      uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+      taken = true;
+      target_addr = ucontext->uc_context.regs[reg_id];
+      break;
+    }
+    case OP_blraa:
+    case OP_blraaz:
+    case OP_blrab:
+    case OP_blrabz:
+    {
+      WARNING("branch with pointer authentication is not fully supported");
+      uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+      taken = true;
+      target_addr = ucontext->uc_context.regs[reg_id];
+      break;
+    }
+    case OP_braa:
+    case OP_braaz:
+    case OP_brab:
+    case OP_brabz: 
+    {
+      WARNING("branch with pointer authentication is not fully supported");
+      uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+      taken = true;
+      target_addr = ucontext->uc_context.regs[reg_id];
+      break;
+    }
+    case OP_bcond: 
+    {
+      uint8_t cond = raw_inst & ((1 << 4) - 1);
+      int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+      
+      taken = condition_holds(cond, &mcontext);
+      target_addr = taken ? mcontext.pc + imm : UNKNOWN_ADDR;
+      break;
+    }
+    case OP_cbnz: 
+    {
+      uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+      int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+
+      taken = ucontext->uc_mcontext.regs[reg_id] != 0;
+      target_addr = taken ? mcontext.pc + imm : UNKNOWN_ADDR;
+      break;
+    }
+    case OP_cbz: 
+    {
+      uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+      int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+
+      taken = ucontext->uc_mcontext.regs[reg_id] == 0;
+      target_addr = taken ? mcontext.pc + imm : UNKNOWN_ADDR;
+      break;
+    }
+    case OP_tbnz:
+    {
+      uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1))
+      int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+      uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+
+      taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) != 0;
+      target_addr = taken ? mcontext.pc + imm : UNKNOWN_ADDR;
+      break;
+    }
+    case OP_tbz:
+    {
+      uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1))
+      int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+      uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+
+      taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) == 0;
+      target_addr = taken ? mcontext.pc + imm : UNKNOWN_ADDR;
+      break;
+    }
+    default:
+      assert(0 && "this instruction is not a branch instruction!");
   }
+  // if (instr_is_cbr(&d_insn))
+  // {
+  //   uint32_t eflags = mcontext.xflags;
+
+  //   switch (instr_get_opcode(&d_insn))
+  //   {
+  //   // TODO:
+    // case OP_b:
+    // case OP_bl:
+    // case OP_blr:
+    // case OP_br:
+    // case OP_blrab:
+    // case OP_blrabz:
+    // case OP_braaz:
+    // case OP_brab:
+    // case OP_brabz:
+  //     taken = true;
+  //     break;
+
+  //   // TODO: following OP code should be handled seperately
+  //   case OP_bcond:
+  //   case OP_cbnz:
+  //   case OP_cbz:
+  //   case OP_tbnz:
+  //   case OP_tbz:
+  //     // TODO: handle the conditonal jump
+  //     taken = true;
+  //     break;
+  //   default:
+  //     // Handle other conditional branches as needed
+  //     assert(0 && "unhandled jump instruction.");
+  //     break;
+  //   }
+
+  //   std::string log_str = "the conditional branch is ";
+  //   if (!taken)
+  //     log_str += "not ";
+  //   log_str += "taken";
+  //   DEBUG("%s", log_str.c_str());
+  // }
+  // else
+  // {
+  //   DEBUG("the unconditional branch is taken");
+  // }
 
   // handle the cbr
   instr_free(dr_context, &d_insn);
