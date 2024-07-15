@@ -14,7 +14,7 @@
 class BufferManager
 {
 public:
-    BufferManager(int num_threads, int buffer_size, const std::string &output_path) : num_threads_(num_threads), buffer_size_(buffer_size), stop_writer_(false)
+    BufferManager(int num_threads, const std::string &output_path) : num_threads_(num_threads), stop_writer_(false)
     {
         // we allocate 2 buffers for every worker thread
         for (int i = 0; i < num_threads_ * 2; ++i)
@@ -38,13 +38,22 @@ public:
         if (dirty_buffers_.size() > 0)
         {
             INFO("there are %d dirty buffers to flush", dirty_buffers_.size());
-            while (dirty_buffers_.size())
+            while (!dirty_buffers_.empty())
             {
                 auto *buffer = dirty_buffers_.front();
+                clean_buffers_.push(buffer);
                 dirty_buffers_.pop();
-                
+
                 buffer->output(output_file);
+                delete buffer;
             }
+        }
+
+        while (!clean_buffers_.empty())
+        {
+            auto *buffer = clean_buffers_.front();
+            clean_buffers_.pop();
+            delete buffer;
         }
     }
 
@@ -113,7 +122,6 @@ private:
             {
                 break;
             }
-            
 
             StackLBRBuffer *buffer = dirty_buffers_.front();
             dirty_buffers_.pop();
@@ -126,12 +134,11 @@ private:
             clean_buffers_.push(buffer);
             clean_buffer_cv_.notify_one();
         }
-        
+
         INFO("writer thread is over");
     }
 
     int num_threads_;
-    int buffer_size_;
     std::queue<StackLBRBuffer *> clean_buffers_;
     std::queue<StackLBRBuffer *> dirty_buffers_;
     std::mutex mutex_;

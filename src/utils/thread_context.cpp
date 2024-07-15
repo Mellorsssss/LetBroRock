@@ -86,7 +86,7 @@ void ThreadContext::open_perf_sampling_event()
      */
     if (this->rbuf_ != nullptr || this->sampling_fd_ != -1)
     {
-        ERROR("open_perf_sampling_event is called multiple times.");
+        ERROR("open_perf_sampling_event is called multiple times %d", tid_);
     }
 
     struct perf_event_attr pe;
@@ -171,7 +171,19 @@ bool ThreadContext::stack_lbr_entry_full()
 
 void ThreadContext::stack_lbr_entry_reset()
 {
+    DEBUG("begin to reset the lbr entry of thread %d", tid_);
+    if (thread_buffer_ == nullptr)
+    {
+        WARNING("thread %d get null thread buffer", tid_);
+    }
+    else if (false == thread_stack_lbr_entry_.serialize(thread_buffer_->get_current(), thread_buffer_->get_buffer_size()))
+    {
+        INFO("the buffer'size %d is less than needed size %d", thread_buffer_->get_buffer_size(), thread_stack_lbr_entry_.get_total_size());
+        thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_);
+    }
+
     thread_stack_lbr_entry_.reset();
+    DEBUG("succeed to reset the lbr entry of thread %d", tid_);
 }
 
 void ThreadContext::add_to_stack_lbr_entry()

@@ -135,8 +135,9 @@ public:
     buffer_ = nullptr;
     cur_ = nullptr;
   }
-  
-  void reset() {
+
+  void reset()
+  {
     // it's unecessary to memset the memory
     cur_ = buffer_;
   }
@@ -164,7 +165,7 @@ public:
       uint64_t *stack = reinterpret_cast<uint64_t *>(current);
       for (uint8_t i = 0; i < stack_sz; ++i)
       {
-        os << stack[i] << std::endl;
+        os << std::hex << std::showbase << stack[i] << std::endl;
       }
       current += stack_sz * sizeof(uint64_t);
 
@@ -173,11 +174,14 @@ public:
       current += sizeof(branch_sz);
 
       // Read branch_ array and output each pair in the given format
+      // Output the branch trace in reverse order to be compatible with output of perf
+      // TODO: output all the branch trace in one line
       uint64_t *branch = reinterpret_cast<uint64_t *>(current);
-      for (uint8_t i = 0; i < branch_sz; ++i)
+      for (int i = branch_sz - 1; i >= 0; --i)
       {
         os << std::hex << std::showbase << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
       }
+      os << std::endl;
       current += branch_sz * 2 * sizeof(uint64_t);
     }
   }
