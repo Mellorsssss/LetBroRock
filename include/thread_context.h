@@ -1,6 +1,7 @@
 #ifndef THREAD_CONTEXT
 #define THREAD_CONTEXT
 
+#include "buffer_manager.h"
 #include "consts.h"
 #include "dr_api.h"
 #include "dr_tools.h"
@@ -60,7 +61,32 @@ public:
     close_perf_sampling_event();
     close_perf_breakpoint_event();
 
-    ERROR("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
+    if (thread_buffer_ != nullptr && buffer_manager_ != nullptr)
+    {
+      buffer_manager_->return_dirty_buffer(thread_buffer_);
+    }
+
+    INFO("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
+  }
+
+  void reset()
+  {
+    close_perf_sampling_event();
+    close_perf_breakpoint_event();
+
+    if (thread_buffer_ != nullptr && buffer_manager_ != nullptr)
+    {
+      INFO("thread %d return the diry buffer", this->tid_);
+      buffer_manager_->return_dirty_buffer(thread_buffer_);
+    }
+    thread_buffer_ = nullptr;
+  }
+
+  void set_buffer_manager(BufferManager *buffer_manager)
+  {
+    buffer_manager_ = buffer_manager;
+    thread_buffer_ = buffer_manager_->get_clean_buffer();
+    assert(thread_buffer_ != nullptr && "buffer get can't be nullptr");
   }
 
   /** thread state **/
@@ -140,6 +166,9 @@ public:
     }
 
     sampling_fd_ = -1;
+    rbuf_ = nullptr;
+
+    INFO("close pef sampling event %d", tid_);
     return;
   }
 
@@ -223,9 +252,10 @@ private:
   ThreadUnwind thread_unwind_util_;
   StackLBREntry thread_stack_lbr_entry_; //
   StackLBRBuffer *thread_buffer_{nullptr};
+  BufferManager *buffer_manager_{nullptr};
 
   // perf_events related data structure
-  void *rbuf_{nullptr}; // mmap buffer of sampling events
+  void *rbuf_{nullptr}; // mmap buffer of sampling events, it should be removed
   int sampling_fd_{-1}; // the fd of the sampling events, -1 for invalid
   int bp_fd_{-1};       // the fd of breakpoint event, -1 for invalid
 

@@ -58,12 +58,17 @@ public:
 
   bool add_branch(uint64_t from_addr, uint64_t to_addr)
   {
-    assert(branch_sz_ < MAX_LBR_SIZE && "there is no space to add new branch");
+    if (branch_sz_ >= MAX_LBR_SIZE)
+    {
+      WARNING("there is no space to add new branch");
+      return false;
+    }
 
     uint64_t ind = branch_sz_ << 1;
     branch_[ind] = from_addr;
     branch_[ind + 1] = to_addr;
     branch_sz_++;
+    return true;
   }
 
   // get the size of all data in bytes
@@ -131,6 +136,12 @@ public:
     cur_ = nullptr;
   }
 
+  void reset()
+  {
+    // it's unecessary to memset the memory
+    cur_ = buffer_;
+  }
+
   uint8_t *&get_current()
   {
     return cur_;
@@ -154,7 +165,7 @@ public:
       uint64_t *stack = reinterpret_cast<uint64_t *>(current);
       for (uint8_t i = 0; i < stack_sz; ++i)
       {
-        os << stack[i] << std::endl;
+        os << std::hex << std::showbase << stack[i] << std::endl;
       }
       current += stack_sz * sizeof(uint64_t);
 
@@ -163,11 +174,14 @@ public:
       current += sizeof(branch_sz);
 
       // Read branch_ array and output each pair in the given format
+      // Output the branch trace in reverse order to be compatible with output of perf
+      // TODO: output all the branch trace in one line
       uint64_t *branch = reinterpret_cast<uint64_t *>(current);
-      for (uint8_t i = 0; i < branch_sz; ++i)
+      for (int i = branch_sz - 1; i >= 0; --i)
       {
-        os << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
+        os << std::hex << std::showbase << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
       }
+      os << std::endl;
       current += branch_sz * 2 * sizeof(uint64_t);
     }
   }
@@ -175,7 +189,6 @@ public:
 private:
   uint8_t *buffer_{nullptr};
   uint8_t *cur_{nullptr}; // cur_ points to the current position of buffer_
-  int size_{0};
   int cap_{0};
 };
 #endif
