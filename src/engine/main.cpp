@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "amed.h"
 #include "executable_segments.h"
+#include "buffer_manager.h"
 #include "utils.h"
 #include <bits/siginfo.h>
 #include <cassert>
@@ -24,9 +25,7 @@
 #include <unistd.h>
 #include <unordered_map>
 
-constexpr int MAX_THREAD_NUM = 200;
-// const int SIGBEGIN = SIGRTMIN + 1;
-// const int SIGEND = SIGBEGIN + 1;
+constexpr int MAX_THREAD_NUM = 16;
 
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND (SIGBEGIN + 1)
@@ -34,6 +33,7 @@ constexpr int MAX_THREAD_NUM = 200;
 thread_local ThreadContext thread_local_context;
 
 ExecutableSegments *executable_segments = nullptr;
+BufferManager* buffer_manager = nullptr;
 
 void construct_handler(int signum, siginfo_t *info, void *ucontext);
 
@@ -122,11 +122,13 @@ void construct_handler(int signum, siginfo_t *info, void *ucontext)
 {
     DEBUG("construct_handler call in %d", thread_local_context.get_tid());
     thread_local_context.open_perf_sampling_event();
+    thread_local_context.set_buffer_manager(buffer_manager);
 }
 
 void destruct_handler(int signum, siginfo_t *info, void *ucontext)
 {
     DEBUG("destruct_handler call in %d", thread_local_context.get_tid());
+    thread_local_context.reset();
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
@@ -223,7 +225,6 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     return;
 }
 
-int cnt = 0;
 void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
     /**
@@ -261,6 +262,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     {
         errno = 0;
         WARNING("Sampling handler mitakenly interrupt a syscall, just return");
+        thread_local_context.enable_perf_sampling_event();
 
         return;
     }
@@ -274,11 +276,6 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
     // get PC
     uint64_t pc = get_pc(uc);
-    uint64_t sample_pc = thread_local_context.get_sample_pc();
-
-    // TODO(guichuan): switch to interrupt pc?
-    WARNING("the ip is %#lx sampled from %#lx\n", sample_pc, pc);
-    pc = sample_pc;
 
     if (!executable_segments->isAddressInExecutableSegment(pc))
     {
@@ -303,7 +300,8 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
 std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
 {
-    std::vector<pid_t> tids = get_tids(pid, tid);
+    std::vector<pid_t> tids = get_tids(pid, std::vector<pid_t>{tid}, MAX_THREAD_NUM);
+
     assert(tids.size() > 0 && "Target should has at least one thread.");
     WARNING("main :%d and current %d", pid, tid);
 
@@ -316,6 +314,8 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
         }
     }
 
+    // Attention: we must start the writer thread after the calling of get_tids
+    buffer_manager->start_writer_thread();
     return tids;
 }
 
@@ -326,9 +326,13 @@ void stop_profiler(pid_t pid, std::vector<pid_t> &tids)
         WARNING("try to disable perf events for %d", tid);
         if (tgkill(pid, tid, SIGEND) != 0)
         {
+            perror("tgkill");
             WARNING("fail to end %d", tid);
         }
     }
+
+    // Attention: we must stop the writer thread explicitly
+    buffer_manager->stop_writer_thread();
 }
 
 /* main thread is designed to :
@@ -340,26 +344,25 @@ void profiler_main_thread()
     pid_t pid = getpid();
     pid_t tid = syscall(SYS_gettid);
 
-    sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set);
-
-    // usleep(1000); // sleep for 100 ms before the first start
     while (true)
     {
         auto tids = start_profiler(pid, tid);
 
-        // sleep(1);
-        // stop_profiler(pid, tids);
-        return;
-        // usleep(1000 * 1000000000000); // sleep for 100 ms
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        INFO("restart the profiler");
+        stop_profiler(pid, tids);
+        // TODO: it's tricky to wait for the stop of all threads' destruction
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
+    delete buffer_manager;
     return;
 }
 
 __attribute__((constructor)) void preload_main()
 {
     executable_segments = new ExecutableSegments(true);
+    buffer_manager = new BufferManager(MAX_THREAD_NUM, "perf_data.lbr"); 
 
     // register handler of SIGBEGIN for all threads
     {

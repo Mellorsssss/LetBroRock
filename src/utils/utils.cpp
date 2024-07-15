@@ -138,7 +138,8 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
   return std::make_pair(0, false);
 }
 
-std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target, int max_size)
+
+std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t>& exclue_targets, int max_size)
 {
   std::vector<pid_t> tids;
   std::unordered_set<pid_t> tids_set;
@@ -163,7 +164,9 @@ std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target, int max_size)
       {
         pid_t tid_number = std::atol(tid.c_str());
 
-        if (exclue_target == tid_number || target_pid == tid_number)
+        if (std::any_of(exclue_targets.begin(), exclue_targets.end(), [&](pid_t id) {
+          return id == tid_number;
+        }))
           continue;
 
         if (tids_set.find(tid_number) == tids_set.end())

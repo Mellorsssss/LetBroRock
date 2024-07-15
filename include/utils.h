@@ -30,7 +30,7 @@ bool find_next_branch(ThreadContext &tcontext, uint64_t pc);
 
 std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontext_t &context, bool static_eval);
 
-std::vector<pid_t> get_tids(pid_t target_pid, pid_t exclue_target);
+std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t>& exclue_targets, int max_size);
 
 bool is_control_flow_transfer(amed_insn &insn);
 
