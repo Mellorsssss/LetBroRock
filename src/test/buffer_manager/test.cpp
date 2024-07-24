@@ -55,7 +55,7 @@ int main(int argc, char**argv)
 {
   int thread_num = atoi(argv[1]);  
   int cnt = atoi(argv[2]);  
-  g_buffer_manger = new BufferManager(thread_num, cnt, "log");
+  g_buffer_manger = new BufferManager(thread_num, "log");
   g_buffer_manger->start_writer_thread();
   
   std::vector<std::thread> threads;
