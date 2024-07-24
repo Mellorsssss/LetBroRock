@@ -84,7 +84,7 @@ void ThreadContext::open_perf_sampling_event()
     /**
      * precondition: open_perf_sampling_event should be called only once
      */
-    if (this->rbuf_ != nullptr || this->sampling_fd_ != -1)
+    if (this->sampling_fd_ != -1)
     {
         ERROR("open_perf_sampling_event is called multiple times %d", tid_);
     }
@@ -107,18 +107,6 @@ void ThreadContext::open_perf_sampling_event()
         WARNING("the perf_fd is %d", this->sampling_fd_);
         perror("here :perf_event_open");
         return;
-    }
-
-    size_t mmap_len = get_mmap_len();
-    this->rbuf_ = mmap(NULL, mmap_len, PROT_READ, MAP_SHARED, this->sampling_fd_, 0);
-    if (this->rbuf_ == MAP_FAILED)
-    {
-        perror("mmap");
-        ERROR("fail to mmap");
-    }
-    else
-    {
-        WARNING("mmap succ");
     }
 
     if (fcntl(this->sampling_fd_, F_SETFL, O_RDWR | O_NONBLOCK | O_ASYNC) != 0)
@@ -189,30 +177,4 @@ void ThreadContext::stack_lbr_entry_reset()
 void ThreadContext::add_to_stack_lbr_entry()
 {
     thread_stack_lbr_entry_.add_branch(cur_branch_.from_addr, cur_branch_.to_addr);
-}
-
-uint64_t ThreadContext::get_sample_pc()
-{
-    if (rbuf_ == nullptr)
-    {
-        ERROR("fail to read from nullptr buffer");
-    }
-
-    uint64_t offset = sysconf(_SC_PAGESIZE);
-
-    perf_ip_sample *sample = (perf_ip_sample *)((uint8_t *)rbuf_ + offset);
-    DEBUG("Sampling handler: try to get the ip");
-    if (sample == nullptr)
-    {
-        ERROR("fail to get a perf record sample");
-    }
-
-    if (sample->header.type == PERF_RECORD_SAMPLE)
-    {
-        return sample->ip;
-    }
-    else
-    {
-        ERROR("we should get a perf record sample here");
-    }
 }

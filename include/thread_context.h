@@ -156,23 +156,11 @@ public:
       return;
     }
 
-    if (munmap(rbuf_, get_mmap_len()) != 0)
-    {
-      perror("munmap");
-      WARNING("perf sampling event fails to munmap buffer");
-      rbuf_ = nullptr;
-      sampling_fd_ = -1;
-      return;
-    }
-
     sampling_fd_ = -1;
-    rbuf_ = nullptr;
 
     INFO("close pef sampling event %d", tid_);
     return;
   }
-
-  uint64_t get_sample_pc();
 
   void open_perf_breakpoint_event(uint64_t addr);
 
@@ -255,7 +243,6 @@ private:
   BufferManager *buffer_manager_{nullptr};
 
   // perf_events related data structure
-  void *rbuf_{nullptr}; // mmap buffer of sampling events, it should be removed
   int sampling_fd_{-1}; // the fd of the sampling events, -1 for invalid
   int bp_fd_{-1};       // the fd of breakpoint event, -1 for invalid
 

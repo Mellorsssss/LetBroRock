@@ -66,9 +66,9 @@ private:
         DEBUG("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
         continue;
       }
-
+        
       segment_map[seg_start] = seg_end;
-      DEBUG("new executable segment: %#lx-%#lx", seg_start, seg_end);
+      DEBUG("new executable segment: %#lx-%#lx %s", seg_start, seg_end, pathname.c_str());
     }
   }
 };

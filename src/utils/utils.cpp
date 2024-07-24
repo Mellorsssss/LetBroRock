@@ -179,6 +179,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t>& exclue_t
     closedir(dir);
     if (!has_new_tid && tids.size() > 0)
       break;
+    delete []path;
   }
 
   std::string log_str = "get_tids: Find tids:";
@@ -531,7 +532,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   }
 
   // handle the cbr
-  instr_free(dr_context, &d_insn);
+  // instr_free(dr_context, &d_insn);
 
   // WARNING("dynamically evaluated address %#lx", target_addr);
   if (taken)
