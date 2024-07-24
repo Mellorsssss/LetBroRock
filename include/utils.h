@@ -38,11 +38,11 @@ bool is_control_flow_transfer(amed_insn &insn);
 std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, amed_context &context, amed_insn &insn);
 
 // return [target_addr, taken]
-std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
+std::pair<uint64_t, bool> evaluate(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
 
-std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
+std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
 
-std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
+std::pair<uint64_t, bool> evaluate_arm(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
 
 void print_backtrace();
 

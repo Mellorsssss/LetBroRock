@@ -40,6 +40,7 @@ public:
 
     // init the dr_context
     thread_dr_context_ = dr_standalone_init();
+    instr_init(thread_dr_context_, &d_insn_);
 #if defined(__x86_64__)
     if (!dr_set_isa_mode(thread_dr_context_, DR_ISA_AMD64, nullptr))
 #elif defined(__aarch64__)
@@ -57,6 +58,8 @@ public:
   {
     DEBUG("destroy the ThreadContext of thread %d", tid_);
     dr_standalone_exit();
+    // TODO: uncomment the following line will cause seg fault
+    // instr_free(thread_dr_context_, &d_insn_);
 
     close_perf_sampling_event();
     close_perf_breakpoint_event();
@@ -97,6 +100,8 @@ public:
   pid_t get_tid() const { return tid_; }
 
   void *get_dr_context() const { return thread_dr_context_; }
+  
+  instr_t* get_instr() { return &d_insn_;}
 
   /** thread perf events state/control **/
   int get_sampling_fd() const { return sampling_fd_; }
@@ -232,6 +237,7 @@ private:
   } thread_state;
 
   void *thread_dr_context_{nullptr};
+  instr_t d_insn_;
 
   thread_state state_{thread_state::CLOSED};
 

@@ -115,7 +115,7 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
     assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
     // if (!is_control_flow_transfer(insn))
     // return std::make_pair(UNKNOWN_ADDR, false);
-    auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn) : evaluate(tcontext.get_dr_context(), acontext, insn, &context);
+    auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn) : evaluate(tcontext.get_dr_context(), *tcontext.get_instr(), acontext, insn, &context);
     if (taken)
     {
       if (static_eval)
@@ -331,23 +331,21 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
   }
 }
 
-std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+std::pair<uint64_t, bool> evaluate(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
 #if defined(__x86_64__)
-  return evaluate_x86(dr_context, context, insn, ucontext);
+  return evaluate_x86(dr_context, d_insn, context, insn, ucontext);
 #elif define(aarch64)
-  return evaluate_arm(dr_context, context, insn, ucontext);
+  return evaluate_arm(dr_context, d_insn, context, insn, ucontext);
 #endif
 }
 
-std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
   dr_mcontext_t mcontext;
   init_dr_mcontext(&mcontext, ucontext);
-  instr_t d_insn;
-  instr_init(dr_context, &d_insn);
   byte *addr = (byte *)(get_pc(ucontext));
 
   if (decode(dr_context, addr, &d_insn) == nullptr)
@@ -356,7 +354,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   }
   else
   {
-    // instr_disassemble(dr_context, &d_insn, STDOUT);
+    instr_disassemble(dr_context, &d_insn, STDOUT);
     DEBUG("\nsucceed to decode the instruction using dynamorio");
   }
 
@@ -443,6 +441,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   bool taken = true;
   if (instr_is_cbr(&d_insn))
   {
+    DEBUG("begin to eval cbr");
     uint32_t eflags = mcontext.xflags;
 
     switch (instr_get_opcode(&d_insn))
@@ -520,11 +519,16 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
       break;
     }
 
-    std::string log_str = "the conditional branch is ";
-    if (!taken)
-      log_str += "not ";
-    log_str += "taken";
-    DEBUG("%s", log_str.c_str());
+    DEBUG("finish eval pre");
+    if (taken)
+    {
+      DEBUG("the conditional branch is taken");
+    }
+    else
+    {
+      DEBUG("the conditional branch is not taken");
+    }
+    DEBUG("finish eval");
   }
   else
   {
@@ -532,7 +536,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
   }
 
   // handle the cbr
-  // instr_free(dr_context, &d_insn);
 
   // WARNING("dynamically evaluated address %#lx", target_addr);
   if (taken)
