@@ -5,7 +5,8 @@ typedef enum
     LOG_DEBUG,
     LOG_INFO,
     LOG_WARNING,
-    LOG_ERROR
+    LOG_ERROR,
+    LOG_NONE,
 } LogLevel;
 
 #define COLOR_RESET "\x1b[0m"

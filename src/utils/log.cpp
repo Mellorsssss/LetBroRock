@@ -14,7 +14,7 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
   const char *levelStr[] = {"DEBUG", "INFO", "WARNING", "ERROR"};
   const char *colorStr[] = {COLOR_DEBUG, COLOR_INFO, COLOR_WARNING, COLOR_ERROR};
 
-  printf("%s[%s:%d] %s: %s", colorStr[level], file, line, levelStr[level], COLOR_RESET);
+   printf("%s[%s:%d] %s: %s", colorStr[level], file, line, levelStr[level], COLOR_RESET);
 
   va_list args;
   va_start(args, format);
@@ -24,6 +24,6 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
 
   if (level == LOG_ERROR)
   {
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE);
   }
 }

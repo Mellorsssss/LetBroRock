@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 3.15)
 
 project(LBR VERSION 1.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_compile_options("-w")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")
 
 add_definitions( -D LOG_LEVEL=LOG_ERROR)
-# add_definitions( -D MY_DEBUG)
+# add_definitions( -D MY_ERROR)
 # add_definitions( -D NO_STATIC)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

@@ -33,7 +33,7 @@ uint64_t get_pc(ucontext_t *ucontext)
 #endif
 }
 
-bool find_next_branch(ThreadContext &tcontext, uint64_t pc)
+bool find_next_branch(ThreadContext &tcontext, uint64_t pc,int length)
 {
   amed_context context;
 #if defined(__x86_64__)
@@ -44,13 +44,10 @@ bool find_next_branch(ThreadContext &tcontext, uint64_t pc)
   context.machine_mode = AMED_MACHINE_MODE_64;
 #endif
 
-  context.length = INT32_MAX;
+  context.length = length;
   context.address = (uint8_t *)pc;
 
   amed_context *pcontext = &context;
-
-  amed_formatter formatter = {0};
-  formatter.lower_case = true;
 
   amed_insn insn;
 
@@ -91,10 +88,6 @@ void enable_perf_sampling(pid_t tid, int perf_fd)
 
 std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontext_t &context, bool static_eval)
 {
-  amed_formatter formatter = {0};
-  formatter.lower_case = true;
-
-  /* allocate buffer for formatter */
   amed_context acontext;
 
   uint64_t from_addr = tcontext.get_branch().from_addr;
@@ -261,6 +254,7 @@ void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext)
 
 std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, amed_context &context, amed_insn &insn)
 {
+  return std::make_pair(UNKNOWN_ADDR, true);
 #ifdef NO_STATIC
   return std::make_pair(UNKNOWN_ADDR, true);
 #endif
@@ -354,7 +348,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
   }
   else
   {
-    instr_disassemble(dr_context, &d_insn, STDOUT);
+    // instr_disassemble(dr_context, &d_insn, STDOUT);
     DEBUG("\nsucceed to decode the instruction using dynamorio");
   }
 
@@ -416,7 +410,13 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
   }
   else if (opnd_is_reg(target_op))
   {
-    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext) + insn.length; // TODO: is this always offset?
+    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext); // TODO: is this always offset?
+    // if the instruction is ret, then just jump to the exact address
+    if (!instr_is_return(&d_insn)) {
+      target_addr += insn.length;
+    } else {
+      target_addr = *((uint64_t*)target_addr);
+    }
   }
   else
   {
@@ -519,7 +519,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
       break;
     }
 
-    DEBUG("finish eval pre");
     if (taken)
     {
       DEBUG("the conditional branch is taken");
@@ -528,7 +527,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
     {
       DEBUG("the conditional branch is not taken");
     }
-    DEBUG("finish eval");
   }
   else
   {

@@ -11,11 +11,15 @@ void print_backtrace();
 
 int bar(int i)
 {
+  // fprintf(stderr, ".");
+ // printf(".");
   return i + 1;
 }
 
 int foo(int i)
 {
+  // fprintf(stderr, ",");
+  //printf("\b");
   return bar(i) + 2;
 }
 
@@ -26,13 +30,14 @@ auto long_for(int loop_cnt) -> int
   {
     if (i % 2)
     {
-      fuck_cnt += i;
+      fuck_cnt += bar(i);
     }
     else
     {
-      fuck_cnt += i + 1;
+      fuck_cnt += foo(i);
     }
   }
+  sleep(1);
   return fuck_cnt;
 }
 
@@ -40,7 +45,7 @@ void workload()
 {
   // sleep(1);
   asm volatile("" : : : "memory");
-  int a = long_for(1000000000);
+  int a = long_for(47483647);
   asm volatile("" : : : "memory");
   std::cout << a << std::endl;
 }
@@ -50,16 +55,24 @@ int main(int argc, char **argv)
   std::vector<std::thread> threads;
 
   int thread_num = atoi(argv[1]);
-  for (int i = 0; i < thread_num; i++)
-  {
-    threads.emplace_back(std::thread(workload));
-  }
+  while(true){
+    for (int i = 0; i < 1; i++)
+    {
+    // workload();
+      for (int i = 0; i < thread_num; i++)
+    {
+      threads.emplace_back(std::thread(workload));
+    }
 
-  for (int i = 0; i < thread_num; i++)
-  {
-    if (threads[i].joinable())
-      threads[i].join();
+    for (int i = 0; i < thread_num; i++)
+    {
+      if (threads[i].joinable())
+        threads[i].join();
+    }
+    sleep(1);
   }
+  }
+  
 
   return 0;
 }

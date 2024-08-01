@@ -25,13 +25,13 @@
 #include <unistd.h>
 #include <unordered_map>
 
-constexpr int MAX_THREAD_NUM = 16;
+constexpr int MAX_THREAD_NUM = 200;
 
-#define SIGBEGIN (SIGRTMIN + 1)
-#define SIGEND (SIGBEGIN + 1)
+#define SIGBEGIN (SIGRTMIN + 2)
+#define SIGEND (SIGBEGIN - 1)
 
 thread_local ThreadContext thread_local_context;
-
+thread_local int n = 0;
 ExecutableSegments *executable_segments = nullptr;
 BufferManager* buffer_manager = nullptr;
 
@@ -44,6 +44,25 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext);
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext);
 
 bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
+
+void signal_prehandle(sigset_t &new_set, sigset_t &old_set);
+
+void signal_posthandle(sigset_t &old_set);
+
+// use RAII to auto block/unblock signals
+class SignalGuard{
+public:
+    SignalGuard() {
+        signal_prehandle(new_set, old_set);
+    }
+
+    ~SignalGuard() {
+        signal_posthandle(old_set);
+    }
+private:
+    sigset_t new_set;
+    sigset_t old_set;
+};
 
 /**
  * iterate instructions from `pc`.
@@ -58,8 +77,10 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc)
 {
     while (true)
     {
-        DEBUG("Branch PC: %#lx", pc);
-        bool found = find_next_branch(tcontext, pc);
+        //  ERROR("Branch PC: %#lx", pc);
+        int length = executable_segments->getExecutableSegmentSize(pc);
+        // length=2;
+        bool found = find_next_branch(tcontext, pc,length);
         if (!found)
         {
             WARNING("Fail to find a branch until the end of the code from %#lx.", pc);
@@ -111,7 +132,7 @@ void signal_prehandle(sigset_t &new_set, sigset_t &old_set)
 
 void signal_posthandle(sigset_t &old_set)
 {
-    if (sigprocmask(SIG_SETMASK, &old_set, NULL) < 0)
+    if (pthread_sigmask(SIG_SETMASK, &old_set, NULL) < 0)
     {
         perror("pthread_sigmask");
         exit(EXIT_FAILURE);
@@ -120,6 +141,9 @@ void signal_posthandle(sigset_t &old_set)
 
 void construct_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    SignalGuard signal_guard;
+    n+=1;
+    // ERROR("construct_handler the value of n is %d",n);
     DEBUG("construct_handler call in %d", thread_local_context.get_tid());
     thread_local_context.open_perf_sampling_event();
     thread_local_context.set_buffer_manager(buffer_manager);
@@ -127,19 +151,29 @@ void construct_handler(int signum, siginfo_t *info, void *ucontext)
 
 void destruct_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    SignalGuard signal_guard;
+    n-=1;
+    // ERROR("destruct_handler the value of n is %d",n);
     DEBUG("destruct_handler call in %d", thread_local_context.get_tid());
-    thread_local_context.reset();
+    thread_local_context.destroy();
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    if (errno != 0) {
+        ERROR("invalid errno %d", errno);
+        errno = 0;
+        thread_local_context.close_perf_breakpoint_event();
+        thread_local_context.reset();
+        thread_local_context.enable_perf_sampling_event();
+        return;
+    }
+    
+    SignalGuard signal_guard;
     print_backtrace();
-
+    thread_local_context.close_perf_sampling_event();
     assert(errno != EINTR && "breakpoint should not hit the syscall");
     assert(thread_local_context.get_tid() == syscall(SYS_gettid) && "thread_local_context with wrong tid");
-
-    sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set);
 
     /**
      * preconditions:
@@ -150,12 +184,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
      */
     if (!thread_local_context.is_breakpointing())
     {
-        ERROR("breakpoint hit when the thread is not in breakpoint");
+         ERROR("breakpoint hit when the thread is not in breakpoint");
     }
 
     if (thread_local_context.get_breakpoint_fd() != info->si_fd)
     {
-        ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
+       ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
+        thread_local_context.reset();
+        thread_local_context.enable_perf_sampling_event();
+         return;
     }
 
     uint64_t bp_addr = thread_local_context.get_breakpoint_addr();
@@ -165,8 +202,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (pc != bp_addr || bp_addr != thread_local_context.get_branch().from_addr || !executable_segments->isAddressInExecutableSegment(pc))
     {
         ERROR("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, bp_addr);
-        thread_local_context.enable_perf_sampling_event();
-        signal_posthandle(old_set);
+        // thread_local_context.reset();
+        // thread_local_context.enable_perf_sampling_event();
+         thread_local_context.enable_perf_sampling_event();
         return;
     }
 
@@ -193,7 +231,6 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
             thread_local_context.stack_lbr_entry_reset();
 
             thread_local_context.enable_perf_sampling_event();
-            signal_posthandle(old_set);
             return;
         }
         else
@@ -209,17 +246,19 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (!executable_segments->isAddressInExecutableSegment(next_from_addr))
     {
         ERROR("breakpoint handler triggered at un-executable pc %lx", next_from_addr);
+        // reset the current state
+        thread_local_context.reset();
+        thread_local_context.enable_perf_sampling_event();
+        return;
     }
 
     if (ok)
     {
-        signal_posthandle(old_set);
         thread_local_context.open_perf_breakpoint_event(next_from_addr);
     }
     else
     {
         thread_local_context.enable_perf_sampling_event();
-        signal_posthandle(old_set);
     }
 
     return;
@@ -227,6 +266,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    if (errno != 0)
+    {
+        ERROR("invalid errno %d", errno);
+        errno = 0;
+        WARNING("Sampling handler mitakenly interrupt a syscall, just return");
+        return;
+    }
+
+    SignalGuard signal_guard;
     /**
      * preconditions:
      * 1. thread is in sampling mode
@@ -241,6 +289,8 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     if (thread_local_context.get_sampling_fd() != info->si_fd)
     {
         ERROR("sampling hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_sampling_fd());
+        // thread_local_context. close_perf_sampling_event();;
+        return;
     }
 
     thread_local_context.reset_branch(); // sampling_handler is the start of find new branch
@@ -249,26 +299,10 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
     pid_t target_pid = syscall(SYS_gettid);
 
-    long long count;
-    if (read(info->si_fd, &count, sizeof(long long)) > 0)
-    {
-        DEBUG("the count %d", count);
-    }
-
     thread_local_context.disable_perf_sampling_event();
 
     // trick: if sampling handler interrupt a syscall, we just simply return
-    if (errno == EINTR)
-    {
-        errno = 0;
-        WARNING("Sampling handler mitakenly interrupt a syscall, just return");
-        thread_local_context.enable_perf_sampling_event();
-
-        return;
-    }
-
-    sigset_t new_set, old_set;
-    signal_prehandle(new_set, old_set);
+    
 
     ucontext_t *uc = (ucontext_t *)ucontext;
 
@@ -281,20 +315,17 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("Sampling handler triggered at un-executable pc %lx", pc);
         thread_local_context.enable_perf_sampling_event();
-        signal_posthandle(old_set);
         return;
     }
 
     bool ok = find_next_unresolved_branch(thread_local_context, pc);
     if (ok)
     {
-        signal_posthandle(old_set);
         thread_local_context.open_perf_breakpoint_event(thread_local_context.get_branch().from_addr);
     }
     else
     {
         thread_local_context.enable_perf_sampling_event();
-        signal_posthandle(old_set);
     }
 }
 
@@ -347,8 +378,7 @@ void profiler_main_thread()
     while (true)
     {
         auto tids = start_profiler(pid, tid);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         INFO("restart the profiler");
         stop_profiler(pid, tids);
         // TODO: it's tricky to wait for the stop of all threads' destruction
@@ -370,7 +400,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = construct_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        // sigemptyset(&sa.sa_mask);
+        sigemptyset(&sa.sa_mask);
         if (sigaction(SIGBEGIN, &sa, NULL) != 0)
         {
             perror("sigaction");
@@ -384,7 +414,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = destruct_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        // sigemptyset(&sa.sa_mask);
+        sigemptyset(&sa.sa_mask);
         if (sigaction(SIGEND, &sa, NULL) != 0)
         {
             perror("sigaction");
@@ -397,7 +427,7 @@ __attribute__((constructor)) void preload_main()
         struct sigaction sa;
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = sampling_handler;
-        sa.sa_flags = SA_SIGINFO; // | SA_RESTART;
+        sa.sa_flags = SA_SIGINFO | SA_RESTART;
         sigemptyset(&sa.sa_mask);
         if (sigaction(SIGIO, &sa, NULL) != 0)
         {
@@ -411,19 +441,18 @@ __attribute__((constructor)) void preload_main()
         struct sigaction sa;
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = breakpoint_handler;
-        sa.sa_flags = SA_SIGINFO; // | SA_RESTART;
+        sa.sa_flags = SA_SIGINFO | SA_RESTART;
         sigemptyset(&sa.sa_mask);
-        if (sigaction(SIGTRAP, &sa, NULL) != 0)
+        if (sigaction(SIGRTMIN+4, &sa, NULL) != 0)
         {
             perror("sigaction");
             return;
         }
     }
     std::thread t(profiler_main_thread);
-    t.detach(); // TODO: it seems a little dangerous
+    t.detach();
 
     atexit([]()
            { 
-                dr_standalone_exit();
                 INFO("Just for testing :D Hooked exit function"); });
 }

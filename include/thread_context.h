@@ -57,7 +57,7 @@ public:
   ~ThreadContext()
   {
     DEBUG("destroy the ThreadContext of thread %d", tid_);
-    dr_standalone_exit();
+    // dr_standalone_exit();
     // TODO: uncomment the following line will cause seg fault
     // instr_free(thread_dr_context_, &d_insn_);
 
@@ -72,7 +72,7 @@ public:
     INFO("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
   }
 
-  void reset()
+  void destroy()
   {
     close_perf_sampling_event();
     close_perf_breakpoint_event();
@@ -83,6 +83,11 @@ public:
       buffer_manager_->return_dirty_buffer(thread_buffer_);
     }
     thread_buffer_ = nullptr;
+  }
+
+  void reset() {
+    stack_lbr_entry_reset();
+    reset_branch();
   }
 
   void set_buffer_manager(BufferManager *buffer_manager)
@@ -189,6 +194,7 @@ public:
       return;
     }
 
+    WARNING("close perf bp event %d", tid_);
     bp_fd_ = -1;
     return;
   }

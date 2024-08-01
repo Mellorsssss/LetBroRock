@@ -43,7 +43,7 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
         exit(EXIT_FAILURE);
     }
 
-    if (fcntl(this->bp_fd_, F_SETSIG, SIGTRAP) == -1)
+    if (fcntl(this->bp_fd_, F_SETSIG, SIGRTMIN+4) == -1)
     {
         perror("F_SETSIG");
         exit(EXIT_FAILURE);
@@ -65,14 +65,15 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
     DEBUG("successfully set breakpoint at %lx", pe.bp_addr);
     if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
+        ERROR("reset failure %d", tid_);
         perror("PERF_EVENT_IOC_RESET");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     if (ioctl(this->bp_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0)
     {
         perror("PERF_EVENT_IOC_ENABLE");
-        exit(EXIT_FAILURE);
+        return;
     }
 }
 
@@ -101,7 +102,7 @@ void ThreadContext::open_perf_sampling_event()
     pe.exclude_kernel = 1;
     pe.exclude_hv = 1;
 
-    this->sampling_fd_ = syscall(__NR_perf_event_open, &pe, 0, -1, -1, 0);
+    this->sampling_fd_ = syscall(__NR_perf_event_open, &pe, tid_, -1, -1, 0);
     if (this->sampling_fd_ < 0)
     {
         WARNING("the perf_fd is %d", this->sampling_fd_);
@@ -135,6 +136,7 @@ void ThreadContext::open_perf_sampling_event()
     // open perf_event
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
+        ERROR("reset failure %d", tid_);
         perror("PERF_EVENT_IOC_RESET");
         exit(EXIT_FAILURE);
     }
@@ -167,7 +169,7 @@ void ThreadContext::stack_lbr_entry_reset()
     else if (false == thread_stack_lbr_entry_.serialize(thread_buffer_->get_current(), thread_buffer_->get_buffer_size()))
     {
         INFO("the buffer'size %d is less than needed size %d", thread_buffer_->get_buffer_size(), thread_stack_lbr_entry_.get_total_size());
-        thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_);
+        thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_);//wait_clean_buffer
     }
 
     thread_stack_lbr_entry_.reset();

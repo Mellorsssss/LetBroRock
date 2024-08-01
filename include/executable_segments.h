@@ -30,6 +30,17 @@ public:
     return address >= it->first && address < it->second;
   }
 
+ int getExecutableSegmentSize(uint64_t pc) const
+ { 
+    auto it = segment_map.upper_bound(pc);
+    if (it == segment_map.begin())
+      return 0;
+    --it;
+    if(pc >= it->first && pc < it->second)
+      return it->second - pc;
+    return 0;
+ }
+
 private:
   std::map<uintptr_t, uintptr_t> segment_map;
 
@@ -64,7 +75,10 @@ private:
       if (!(lineStream >> pathname) || (exclude_shared_lib && pathname.find(".so") != std::string::npos))
       {
         DEBUG("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
-        continue;
+        // continue;
+        if (pathname.find("profiler") != std::string::npos) {
+          continue;
+        }
       }
         
       segment_map[seg_start] = seg_end;

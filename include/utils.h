@@ -26,7 +26,7 @@ uint64_t get_pc(ucontext_t *ucontext);
 long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu,
                      int group_fd, unsigned long flags);
 
-bool find_next_branch(ThreadContext &tcontext, uint64_t pc);
+bool find_next_branch(ThreadContext &tcontext, uint64_t pc,int length);
 
 std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontext_t &context, bool static_eval);
 
