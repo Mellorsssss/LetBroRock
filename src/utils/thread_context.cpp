@@ -87,7 +87,8 @@ void ThreadContext::open_perf_sampling_event()
      */
     if (this->sampling_fd_ != -1)
     {
-        ERROR("open_perf_sampling_event is called multiple times %d", tid_);
+        WARNING("open_perf_sampling_event is called multiple times %d", tid_);//signal siganl
+        return;
     }
 
     struct perf_event_attr pe;
@@ -132,7 +133,7 @@ void ThreadContext::open_perf_sampling_event()
         exit(EXIT_FAILURE);
     }
 
-    DEBUG("perf_events_enable: for %d(fd: %d)", owner.pid, this->sampling_fd_);
+    ERROR("perf_events_enable: for %d(fd: %d)", owner.pid, this->sampling_fd_);
     // open perf_event
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {

@@ -12,14 +12,14 @@ void print_backtrace();
 int bar(int i)
 {
   // fprintf(stderr, ".");
- // printf(".");
+  // printf(".");
   return i + 1;
 }
 
 int foo(int i)
 {
   // fprintf(stderr, ",");
-  //printf("\b");
+  // printf("\b");
   return bar(i) + 2;
 }
 
@@ -55,24 +55,23 @@ int main(int argc, char **argv)
   std::vector<std::thread> threads;
 
   int thread_num = atoi(argv[1]);
-  while(true){
-    for (int i = 0; i < 1; i++)
-    {
+  int count = 100;
+  while (count--)
+  {
     // workload();
-      for (int i = 0; i < thread_num; i++)
+    for (int i = 0; i < thread_num; i++)
     {
       threads.emplace_back(std::thread(workload));
     }
 
-    for (int i = 0; i < thread_num; i++)
+    for (int i = 0;i < thread_num; i++)
     {
       if (threads[i].joinable())
         threads[i].join();
     }
     sleep(1);
+    threads.clear();
   }
-  }
-  
 
   return 0;
 }

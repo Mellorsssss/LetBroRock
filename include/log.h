@@ -15,7 +15,9 @@ typedef enum
 #define COLOR_WARNING "\x1b[33m"
 #define COLOR_ERROR "\x1b[31m"
 
+static int logFd = -1;
 void logMessage(LogLevel level, const char *file, int line, const char *format, ...);
+void initLogFile();
 
 #define LOG(level, ...) logMessage(level, __FILE__, __LINE__, __VA_ARGS__)
 

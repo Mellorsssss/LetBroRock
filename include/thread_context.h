@@ -56,33 +56,26 @@ public:
 
   ~ThreadContext()
   {
-    DEBUG("destroy the ThreadContext of thread %d", tid_);
-    // dr_standalone_exit();
+    dr_standalone_exit();
     // TODO: uncomment the following line will cause seg fault
-    // instr_free(thread_dr_context_, &d_insn_);
+    instr_free(thread_dr_context_, &d_insn_);
 
-    close_perf_sampling_event();
-    close_perf_breakpoint_event();
-
-    if (thread_buffer_ != nullptr && buffer_manager_ != nullptr)
-    {
-      buffer_manager_->return_dirty_buffer(thread_buffer_);
-    }
-
-    INFO("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
+    destroy();
   }
 
   void destroy()
   {
+    WARNING("destroy the ThreadContext of thread %d", tid_);
     close_perf_sampling_event();
     close_perf_breakpoint_event();
-
+    // reset();
     if (thread_buffer_ != nullptr && buffer_manager_ != nullptr)
     {
       INFO("thread %d return the diry buffer", this->tid_);
       buffer_manager_->return_dirty_buffer(thread_buffer_);
     }
     thread_buffer_ = nullptr;
+    WARNING("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
   }
 
   void reset() {
@@ -92,6 +85,7 @@ public:
 
   void set_buffer_manager(BufferManager *buffer_manager)
   {
+    if(buffer_manager_!=nullptr) {return;}
     buffer_manager_ = buffer_manager;
     thread_buffer_ = buffer_manager_->get_clean_buffer();
     assert(thread_buffer_ != nullptr && "buffer get can't be nullptr");
@@ -177,14 +171,15 @@ public:
   // breakpoint event is created every time, so we don't have a 'disable_perf_breakpont_event'
   void close_perf_breakpoint_event()
   {
-    bp_addr_ = UNKNOWN_ADDR;
-    state_ = thread_state::SAMPLING;
-
     if (bp_fd_ == -1)
     {
       WARNING("breakpoint event is closed.");
       return;
     }
+    bp_addr_ = UNKNOWN_ADDR;
+    state_ = thread_state::SAMPLING;
+
+    
 
     if (close(bp_fd_) != 0)
     {
@@ -251,7 +246,7 @@ private:
 
   ThreadUnwind thread_unwind_util_;
   StackLBREntry thread_stack_lbr_entry_; //
-  StackLBRBuffer *thread_buffer_{nullptr};
+  std::shared_ptr<StackLBRBuffer> thread_buffer_{nullptr};
   BufferManager *buffer_manager_{nullptr};
 
   // perf_events related data structure

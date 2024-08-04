@@ -27,8 +27,8 @@
 
 constexpr int MAX_THREAD_NUM = 200;
 
-#define SIGBEGIN (SIGRTMIN + 2)
-#define SIGEND (SIGBEGIN - 1)
+#define SIGBEGIN (SIGRTMIN + 1)
+#define SIGEND (SIGBEGIN + 1)
 
 thread_local ThreadContext thread_local_context;
 thread_local int n = 0;
@@ -161,10 +161,10 @@ void destruct_handler(int signum, siginfo_t *info, void *ucontext)
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 {
     if (errno != 0) {
-        ERROR("invalid errno %d", errno);
+        WARNING("invalid errno %d", errno);
         errno = 0;
         thread_local_context.close_perf_breakpoint_event();
-        thread_local_context.reset();
+        // thread_local_context.reset();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -184,15 +184,20 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
      */
     if (!thread_local_context.is_breakpointing())
     {
-         ERROR("breakpoint hit when the thread is not in breakpoint");
+        ERROR("breakpoint hit when the thread is not in breakpoint");
+        thread_local_context.close_perf_breakpoint_event();
+        // thread_local_context.reset();
+        thread_local_context.enable_perf_sampling_event();
+         return;
     }
 
     if (thread_local_context.get_breakpoint_fd() != info->si_fd)
     {
        ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
-        thread_local_context.reset();
+        thread_local_context.close_perf_breakpoint_event();
+        // thread_local_context.reset();
         thread_local_context.enable_perf_sampling_event();
-         return;
+        return;
     }
 
     uint64_t bp_addr = thread_local_context.get_breakpoint_addr();
@@ -202,9 +207,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (pc != bp_addr || bp_addr != thread_local_context.get_branch().from_addr || !executable_segments->isAddressInExecutableSegment(pc))
     {
         ERROR("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, bp_addr);
+        thread_local_context.close_perf_breakpoint_event();
         // thread_local_context.reset();
-        // thread_local_context.enable_perf_sampling_event();
-         thread_local_context.enable_perf_sampling_event();
+        thread_local_context.enable_perf_sampling_event();
         return;
     }
 
@@ -228,7 +233,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
             }
 
             thread_local_context.get_entry()->set_stack_size(real_frame_size);
-            thread_local_context.stack_lbr_entry_reset();
+            thread_local_context.reset();
 
             thread_local_context.enable_perf_sampling_event();
             return;
@@ -246,8 +251,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (!executable_segments->isAddressInExecutableSegment(next_from_addr))
     {
         ERROR("breakpoint handler triggered at un-executable pc %lx", next_from_addr);
-        // reset the current state
-        thread_local_context.reset();
+        thread_local_context.close_perf_breakpoint_event();
+        // thread_local_context.reset();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -268,7 +273,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
     if (errno != 0)
     {
-        ERROR("invalid errno %d", errno);
+        WARNING("invalid errno %d", errno);
         errno = 0;
         WARNING("Sampling handler mitakenly interrupt a syscall, just return");
         return;
@@ -339,6 +344,7 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
     for (auto &tid : tids)
     {
         WARNING("try to enable perf events for %d", tid);
+        ERROR("begin to start %d", tid);
         if (tgkill(pid, tid, SIGBEGIN) != 0)
         {
             WARNING("fail to begin %d", tid);
@@ -355,6 +361,7 @@ void stop_profiler(pid_t pid, std::vector<pid_t> &tids)
     for (auto &tid : tids)
     {
         WARNING("try to disable perf events for %d", tid);
+        ERROR("begin to stop %d", tid);
         if (tgkill(pid, tid, SIGEND) != 0)
         {
             perror("tgkill");
@@ -376,13 +383,15 @@ void profiler_main_thread()
     pid_t tid = syscall(SYS_gettid);
 
     while (true)
-    {
+    {   
+        buffer_manager->malloc_all_buffers();
         auto tids = start_profiler(pid, tid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         INFO("restart the profiler");
         stop_profiler(pid, tids);
+        buffer_manager->delete_all_buffers();
         // TODO: it's tricky to wait for the stop of all threads' destruction
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     delete buffer_manager;
@@ -393,6 +402,7 @@ __attribute__((constructor)) void preload_main()
 {
     executable_segments = new ExecutableSegments(true);
     buffer_manager = new BufferManager(MAX_THREAD_NUM, "perf_data.lbr"); 
+    initLogFile();
 
     // register handler of SIGBEGIN for all threads
     {
