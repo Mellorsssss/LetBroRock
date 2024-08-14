@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <chrono>
 
-constexpr int MAX_THREAD_NUM = 50;
+constexpr int MAX_THREAD_NUM = 2;
 
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND (SIGBEGIN + 1)
@@ -76,7 +76,7 @@ public:
     {
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = end - start_;
-        INFO("took %.2f ms", elapsed.count());
+        INFO("%s took %.2f ms", name_.c_str(), elapsed.count());
     }
 
 private:
@@ -99,7 +99,7 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc)
     {
         //  ERROR("Branch PC: %#lx", pc);
         int length = executable_segments->getExecutableSegmentSize(pc);
-        
+        // length=2;
         bool found = find_next_branch(tcontext, pc,length);
         if (!found)
         {
@@ -145,7 +145,7 @@ void signal_prehandle(sigset_t &new_set, sigset_t &old_set)
     sigfillset(&new_set);
     if (pthread_sigmask(SIG_BLOCK, &new_set, &old_set) < 0)
     {
-        perror("pthread_sigmask");
+        non_perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
 }
@@ -154,7 +154,7 @@ void signal_posthandle(sigset_t &old_set)
 {
     if (pthread_sigmask(SIG_SETMASK, &old_set, NULL) < 0)
     {
-        perror("pthread_sigmask");
+        non_perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
 }
@@ -164,7 +164,7 @@ void construct_handler(int signum, siginfo_t *info, void *ucontext)
     DEBUG("construct_handler call in %d", thread_local_context.get_tid());
    
     thread_local_context.set_buffer_manager(buffer_manager);
-     thread_local_context.open_perf_sampling_event();
+    thread_local_context.open_perf_sampling_event();
 }
 
 void destruct_handler(int signum, siginfo_t *info, void *ucontext)
@@ -178,7 +178,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (errno != 0) {
         ERROR("invalid errno %d", errno);
         // drop the data collected in the current stack_lbr_entry
-        // thread_local_context.reset_entry();
+        thread_local_context.reset_entry();
         thread_local_context.close_perf_breakpoint_event();
         thread_local_context.enable_perf_sampling_event();
         return;
@@ -198,7 +198,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("breakpoint hit when the thread is not in breakpoint");
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset_entry();
+        thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -207,7 +207,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset_entry();
+        thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -220,7 +220,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, bp_addr);
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset_entry();
+        thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -355,7 +355,6 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
         INFO("begin to start %d", tid);
         if (tgkill(pid, tid, SIGBEGIN) != 0)
         {
-            perror("tgkill");
             ERROR("fail to begin %d", tid);
         }
     }
@@ -367,13 +366,12 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
 
 void stop_profiler(pid_t pid, std::vector<pid_t> &tids)
 {
-    TimerGuard timer_guard("start profiler");
+    TimerGuard timer_guard("stop profiler");
     for (auto &tid : tids)
     {
         INFO("begin to stop %d", tid);
         if (tgkill(pid, tid, SIGEND) != 0)
         {
-            perror("tgkill");
             ERROR("fail to end %d", tid);
         }
     }
@@ -390,24 +388,25 @@ void profiler_main_thread()
 {
     pid_t pid = getpid();
     pid_t tid = syscall(SYS_gettid);
-    // buffer_manager->malloc_all_buffers();
+    buffer_manager->malloc_all_buffers();
     while (true)
     {   
-        buffer_manager->malloc_all_buffers();
+        // buffer_manager->malloc_all_buffers();
         auto tids = start_profiler(pid, tid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         INFO("restart the profiler");
         stop_profiler(pid, tids);
-        buffer_manager->delete_all_buffers();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // buffer_manager->delete_all_buffers();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    // buffer_manager->delete_all_buffers();
+    buffer_manager->delete_all_buffers();
     delete buffer_manager;
     return;
 }
 
 __attribute__((constructor)) void preload_main()
 {
+    INFO("begin");
     executable_segments = new ExecutableSegments(true);
     buffer_manager = new BufferManager(MAX_THREAD_NUM, "perf_data.lbr"); 
     initLogFile();
@@ -421,7 +420,7 @@ __attribute__((constructor)) void preload_main()
         sigfillset(&sa.sa_mask);
         if (sigaction(SIGBEGIN, &sa, NULL) != 0)
         {
-            perror("sigaction");
+            non_perror("sigaction");
             return;
         }
     }
@@ -435,7 +434,7 @@ __attribute__((constructor)) void preload_main()
         sigfillset(&sa.sa_mask);
         if (sigaction(SIGEND, &sa, NULL) != 0)
         {
-            perror("sigaction");
+            non_perror("sigaction");
             return;
         }
     }
@@ -449,7 +448,7 @@ __attribute__((constructor)) void preload_main()
         sigfillset(&sa.sa_mask);
         if (sigaction(SIGIO, &sa, NULL) != 0)
         {
-            perror("sigaction");
+            non_perror("sigaction");
             return;
         }
     }
@@ -463,7 +462,7 @@ __attribute__((constructor)) void preload_main()
         sigfillset(&sa.sa_mask);
         if (sigaction(SIGRTMIN+4, &sa, NULL) != 0)
         {
-            perror("sigaction");
+            non_perror("sigaction");
             return;
         }
     }

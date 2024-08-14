@@ -63,8 +63,7 @@ public:
 
     return true;
   }
-// bool unwind(siginfo_t *siginfo, void *sigcontext, uint64_t *buffer, uint8_t max_frame_size, uint8_t &real_frame_size,ExecutableSegments * executable_segments);
-  
+
 private:
   inline void extract_from_context(void *sigcontext)
   {

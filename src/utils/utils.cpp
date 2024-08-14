@@ -81,7 +81,7 @@ void enable_perf_sampling(pid_t tid, int perf_fd)
   DEBUG("enable perf sampling for %d", tid);
   if (ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0) == -1)
   {
-    perror("ioctl(PERF_EVENT_IOC_ENABLE)");
+    non_perror("ioctl(PERF_EVENT_IOC_ENABLE)");
     exit(EXIT_FAILURE);
   }
 }
@@ -171,6 +171,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t>& exclue_t
     }
     closedir(dir);
     if (!has_new_tid && tids.size() > 0)
+    // if (tids.size() > 0)
       break;
     delete []path;
   }
@@ -261,19 +262,13 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
   if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
   {
-     instr_noalloc_t noalloc;;
-    instr_noalloc_init(tcontext.get_dr_context(),&noalloc);
-    instr_t *d_insn = instr_from_noalloc(&noalloc);
-    // instr_init(tcontext.get_dr_context(), &d_insn);
-// instr_noalloc_t noalloc;
-    // instr_noalloc_init(thread_dr_context_, &noalloc);
-    // d_insn_ = instr_from_noalloc(&noalloc);
-    
-    
-    DEBUG("static_evaluate: try to decode the instruction");
-    if (decode(tcontext.get_dr_context(), (byte *)pc, d_insn) == nullptr)
-    {
-      ERROR("fail to decode the instruction using dynamorio");
+	  instr_noalloc_t noalloc;
+	  instr_noalloc_init(tcontext.get_dr_context(), &noalloc);
+	  instr_t *d_insn = instr_from_noalloc(&noalloc);
+
+	  DEBUG("static_evaluate: try to decode the instruction");
+	  if (decode(tcontext.get_dr_context(), (byte *)pc, d_insn) == nullptr) {
+		  ERROR("fail to decode the instruction using dynamorio");
     }
     else
     {

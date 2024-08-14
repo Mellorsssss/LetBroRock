@@ -23,8 +23,7 @@ typedef struct user_regs_struct user_context;
 
 uint64_t get_pc(ucontext_t *ucontext);
 
-long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu,
-                     int group_fd, unsigned long flags);
+long perf_event_open(struct perf_event_attr *event_attr, pid_t pid, int cpu, int group_fd, unsigned long flags);
 
 bool find_next_branch(ThreadContext &tcontext, uint64_t pc,int length);
 

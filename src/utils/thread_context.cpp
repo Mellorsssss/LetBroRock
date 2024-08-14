@@ -2,6 +2,9 @@
 #include <fcntl.h>
 #include <linux/hw_breakpoint.h>
 
+void non_perror(const std::string &s) {
+}
+
 uint64_t get_mmap_len()
 {
     return sysconf(_SC_PAGESIZE) * (1 + RINGBUFFER_SIZE);
@@ -28,7 +31,7 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
     DEBUG("enter the set breakpoint, errno is %d", errno);
     if ((this->bp_fd_ = syscall(__NR_perf_event_open, &pe, tid_, -1, -1, 0)) < 0)
     {
-        perror("perf_event_open");
+        non_perror("perf_event_open");
         ERROR("no left breakpoint");
     }
 
@@ -39,26 +42,26 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
 
     if (fcntl(this->bp_fd_, F_SETOWN_EX, &owner) == -1)
     {
-        perror("F_SETSIG");
+        non_perror("F_SETSIG");
         exit(EXIT_FAILURE);
     }
 
     if (fcntl(this->bp_fd_, F_SETSIG, SIGRTMIN+4) == -1)
     {
-        perror("F_SETSIG");
+        non_perror("F_SETSIG");
         exit(EXIT_FAILURE);
     }
 
     int flags = fcntl(this->bp_fd_, F_GETFL, 0);
     if (flags == -1)
     {
-        perror("F_GETFL");
+        non_perror("F_GETFL");
         exit(EXIT_FAILURE);
     }
 
     if (fcntl(this->bp_fd_, F_SETFL, flags | O_ASYNC) == -1)
     {
-        perror("F_SETFL");
+        non_perror("F_SETFL");
         exit(EXIT_FAILURE);
     }
 
@@ -66,13 +69,13 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
     if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
         ERROR("reset failure %d", tid_);
-        perror("PERF_EVENT_IOC_RESET");
+        non_perror("PERF_EVENT_IOC_RESET");
         return;
     }
 
     if (ioctl(this->bp_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0)
     {
-        perror("PERF_EVENT_IOC_ENABLE");
+        non_perror("PERF_EVENT_IOC_ENABLE");
         return;
     }
 }
@@ -95,7 +98,8 @@ void ThreadContext::open_perf_sampling_event()
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.size = sizeof(struct perf_event_attr);
     pe.type = PERF_TYPE_HARDWARE;
-    pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
+    // pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
+    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
     pe.sample_period = 1000 * 5;
     pe.disabled = 1;
     pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
@@ -107,19 +111,19 @@ void ThreadContext::open_perf_sampling_event()
     if (this->sampling_fd_ < 0)
     {
         WARNING("the perf_fd is %d", this->sampling_fd_);
-        perror("here :perf_event_open");
+        non_perror("here :perf_event_open");
         return;
     }
 
     if (fcntl(this->sampling_fd_, F_SETFL, O_RDWR | O_NONBLOCK | O_ASYNC) != 0)
     {
-        perror("F_SETFL");
+        non_perror("F_SETFL");
         exit(EXIT_FAILURE);
     }
 
     if (fcntl(this->sampling_fd_, F_SETSIG, SIGIO) != 0)
     {
-        perror("F_SETSIG");
+        non_perror("F_SETSIG");
         exit(EXIT_FAILURE);
     }
 
@@ -129,7 +133,7 @@ void ThreadContext::open_perf_sampling_event()
 
     if (fcntl(this->sampling_fd_, F_SETOWN_EX, &owner) != 0)
     {
-        perror("F_SETOWN_EX");
+        non_perror("F_SETOWN_EX");
         exit(EXIT_FAILURE);
     }
 
@@ -138,13 +142,13 @@ void ThreadContext::open_perf_sampling_event()
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
         ERROR("reset failure %d", tid_);
-        perror("PERF_EVENT_IOC_RESET");
+        non_perror("PERF_EVENT_IOC_RESET");
         exit(EXIT_FAILURE);
     }
 
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0)
     {
-        perror("PERF_EVENT_IOC_ENABLE");
+        non_perror("PERF_EVENT_IOC_ENABLE");
         exit(EXIT_FAILURE);
     }
 
@@ -175,6 +179,8 @@ void ThreadContext::stack_lbr_entry_reset()
     
     if (thread_stack_lbr_entry_.get_stack_size() == 0) {
         INFO("%d fails to push an entry", tid_);
+    } else {
+        branch_dyn_cnt_ += thread_stack_lbr_entry_.get_branch_size();
     }
 
     thread_stack_lbr_entry_.reset();

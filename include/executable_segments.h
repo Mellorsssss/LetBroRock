@@ -49,7 +49,7 @@ private:
     std::ifstream mapsFile("/proc/self/maps");
     if (!mapsFile.is_open())
     {
-      perror("open");
+      non_perror("open");
       return;
     }
 
@@ -72,16 +72,19 @@ private:
         continue;
       }
 
-      if (!(lineStream >> pathname) || (exclude_shared_lib && pathname.find(".so") != std::string::npos))
-      {
-        DEBUG("(%#lx-%#lx) %s is skipped", seg_start, seg_end, pathname.c_str());
-        // continue;
-        if (pathname.find("profiler") != std::string::npos) {
-          continue;
-        }
-      }
-        
-      segment_map[seg_start] = seg_end;
+	  if (lineStream >> pathname) {
+		  printf("%s is executable\n", pathname.c_str());
+	  }
+	  if ((exclude_shared_lib && (pathname.find(".so") != std::string::npos) ||
+		   pathname.find("vdso") != std::string::npos || pathname.find("vsyscall") != std::string::npos)) {
+		  printf("(%#lx-%#lx) %s is skipped\n", seg_start, seg_end, pathname.c_str());
+		  continue;
+		  if (pathname.find("profiler") != std::string::npos) {
+			  continue;
+		  }
+	  }
+
+	  segment_map[seg_start] = seg_end;
       DEBUG("new executable segment: %#lx-%#lx %s", seg_start, seg_end, pathname.c_str());
     }
   }

@@ -16,6 +16,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+void non_perror(const std::string &s);
 typedef struct _branch
 {
   uintptr_t from_addr;
@@ -40,11 +41,6 @@ public:
 
     // init the dr_context
     thread_dr_context_ = dr_standalone_init();
-    // instr_noalloc_t noalloc;
-    // instr_noalloc_init(thread_dr_context_, &noalloc);
-    // d_insn_ = instr_from_noalloc(&noalloc);
-    // pc = decode(dcontext, ptr, instr);
-    // instr_init(thread_dr_context_, &d_insn_);
 #if defined(__x86_64__)
     if (!dr_set_isa_mode(thread_dr_context_, DR_ISA_AMD64, nullptr))
 #elif defined(__aarch64__)
@@ -54,14 +50,13 @@ public:
       ERROR("fail to set the isa mode.");
     }
 
-    reset_entry();
+    thread_stack_lbr_entry_.reset();
     reset_branch();
   }
 
   ~ThreadContext()
   {
     // TODO: uncomment the following line will cause seg fault
-    // instr_free(thread_dr_context_, &d_insn_);
     dr_standalone_exit();
 
     destroy();
@@ -79,7 +74,8 @@ public:
     }
     reset_entry();
     thread_buffer_ = nullptr;
-    WARNING("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
+    // WARNING("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
+    WARNING("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
   }
 
   void reset() {
@@ -89,12 +85,15 @@ public:
 
   void reset_entry()
   {
+    
+    drop_cnt_ += thread_stack_lbr_entry_.get_branch_size();
     thread_stack_lbr_entry_.reset();
     reset_branch();
   }
 
   void set_buffer_manager(BufferManager *buffer_manager)
   {
+    
     buffer_manager_ = buffer_manager;
     thread_buffer_ = buffer_manager_->get_clean_buffer();
     assert(thread_buffer_ != nullptr && "buffer get can't be nullptr");
@@ -132,7 +131,7 @@ public:
 
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0)
     {
-      perror("PERF_EVENT_IOC_ENABLE");
+      non_perror("PERF_EVENT_IOC_ENABLE");
       ERROR("fail to enable perf sampling event");
     }
   }
@@ -147,7 +146,7 @@ public:
 
     if (ioctl(sampling_fd_, PERF_EVENT_IOC_DISABLE, 0) != 0)
     {
-      perror("ioctl(PERF_EVENT_IOC_DISABLE)");
+      non_perror("ioctl(PERF_EVENT_IOC_DISABLE)");
       WARNING("fail to disable perf sampling event");
       return;
     }
@@ -163,7 +162,7 @@ public:
 
     if (close(sampling_fd_) != 0)
     {
-      perror("close");
+      non_perror("close");
       WARNING("perf sampling event is closed");
       sampling_fd_ = -1;
       return;
@@ -190,7 +189,7 @@ public:
 
     if (close(bp_fd_) != 0)
     {
-      perror("close");
+      non_perror("close");
       WARNING("fail to close perf sampling event");
       bp_fd_ = -1;
       return;
@@ -231,9 +230,13 @@ public:
   }
 
   /** branch tracing statistics **/
-  void add_static_branch() { branch_static_cnt_++; }
+  void add_static_branch() {
+	  // branch_static_cnt_++;
+  }
 
-  void add_dynamic_branch() { branch_dyn_cnt_++; }
+  void add_dynamic_branch() {
+	  // branch_dyn_cnt_++;
+  }
 
 private:
   pid_t tid_{0};
@@ -262,6 +265,7 @@ private:
 
   int branch_static_cnt_{0};
   int branch_dyn_cnt_{0};
+  int drop_cnt_{0};
   branch cur_branch_{.from_addr = UNKNOWN_ADDR, .to_addr = UNKNOWN_ADDR};
 };
 #endif
