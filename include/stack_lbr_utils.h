@@ -50,6 +50,7 @@ public:
   /* for simplicity, stack_ is modified by raw pointer */
   uint64_t *get_stack_buffer() { return stack_; }
   void set_stack_size(uint8_t sz) { stack_sz_ = sz; }
+  uint8_t get_stack_size() const { return stack_sz_; }
 
   bool is_full() const
   {

@@ -1,0 +1,2008 @@
+
+Thread 103 (Thread 0x7f668efcd700 (LWP 74740)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668efcd168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f668efcd700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 102 (Thread 0x7f669b7e6700 (LWP 74715)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669b7e6168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f669b7e6700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 101 (Thread 0x7f66827b4700 (LWP 74765)):
+#0  0x00007f66b28f1087 in mprotect () from /lib64/libc.so.6
+#1  0x00007f66b287728b in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66827b4168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdc270) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 100 (Thread 0x7f66917d2700 (LWP 74735)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66917d2168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66917d2700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 99 (Thread 0x7f6691fd3700 (LWP 74734)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6691fd3168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6691fd3700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 98 (Thread 0x7f66947d8700 (LWP 74729)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66947d8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66947d8700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 97 (Thread 0x7f6694fd9700 (LWP 74728)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6694fd9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6694fd9700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 96 (Thread 0x7f66877be700 (LWP 74755)):
+#0  0x00007f66b28f1087 in mprotect () from /lib64/libc.so.6
+#1  0x00007f66b287728b in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66877be168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3590) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 95 (Thread 0x7f66997e2700 (LWP 74719)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66997e2168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66997e2700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 94 (Thread 0x7f668afc5700 (LWP 74748)):
+#0  0x00007f66b28f1087 in mprotect () from /lib64/libc.so.6
+#1  0x00007f66b287728b in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668afc5168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3313 in foo(int) ()
+#9  0x000055d0f4fa3377 in long_for(long long) ()
+#10 0x000055d0f4fa33c2 in workload() ()
+#11 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#12 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#13 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#14 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#15 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#16 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc6a0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#17 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#18 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 93 (Thread 0x7f6695fdb700 (LWP 74726)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6695fdb168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6695fdb700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 92 (Thread 0x7f66a77fe700 (LWP 74691)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a77fe168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3367 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fccf60) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 91 (Thread 0x7f669e7ec700 (LWP 74709)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669e7ec168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd2cf0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 90 (Thread 0x7f66847b8700 (LWP 74761)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66847b8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3650) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 89 (Thread 0x7f668bfc7700 (LWP 74746)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668bfc7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa333e in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcafd0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 88 (Thread 0x7f6693fd7700 (LWP 74730)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6693fd7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6693fd7700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 87 (Thread 0x7f6688fc1700 (LWP 74752)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6688fc1168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3530) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 86 (Thread 0x7f668cfc9700 (LWP 74744)):
+#0  0x00007f66b28f1087 in mprotect () from /lib64/libc.so.6
+#1  0x00007f66b287728b in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668cfc9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc130) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 85 (Thread 0x7f66a67fc700 (LWP 74693)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a67fc168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa331b in foo(int) ()
+#8  0x000055d0f4fa3377 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fccfa0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 84 (Thread 0x7f669bfe7700 (LWP 74714)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669bfe7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f669bfe7700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 83 (Thread 0x7f66b0197700 (LWP 74682)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66b0197168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcbe90) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 82 (Thread 0x7f66a37f6700 (LWP 74699)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a37f6168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd1b0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 81 (Thread 0x7f668d7ca700 (LWP 74743)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668d7ca168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd8740) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 80 (Thread 0x7f668b7c6700 (LWP 74747)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668b7c6168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc680) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 79 (Thread 0x7f66a5ffb700 (LWP 74694)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a5ffb168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd240) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 78 (Thread 0x7f668a7c4700 (LWP 74749)):
+#0  0x00007f66b28f1087 in mprotect () from /lib64/libc.so.6
+#1  0x00007f66b287728b in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668a7c4168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa32f1 in bar(int) ()
+#9  0x000055d0f4fa3364 in long_for(long long) ()
+#10 0x000055d0f4fa33c2 in workload() ()
+#11 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#12 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#13 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#14 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#15 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#16 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd34d0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#17 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#18 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 77 (Thread 0x7f66b0998700 (LWP 74681)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66b0998168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcbbd0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 76 (Thread 0x7f669cfe9700 (LWP 74712)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669cfe9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa333a in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd0a80) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 75 (Thread 0x7f669efed700 (LWP 74708)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669efed168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd2a50) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 74 (Thread 0x7f66a07f0700 (LWP 74705)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a07f0168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa32f4 in bar(int) ()
+#8  0x000055d0f4fa3364 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd2270) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 73 (Thread 0x7f66a6ffd700 (LWP 74692)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a6ffd168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa334b in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fccf80) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 72 (Thread 0x7f6689fc3700 (LWP 74750)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6689fc3168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd34f0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 71 (Thread 0x7f66a57fa700 (LWP 74695)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a57fa168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa32f0 in bar(int) ()
+#8  0x000055d0f4fa3313 in foo(int) ()
+#9  0x000055d0f4fa3377 in long_for(long long) ()
+#10 0x000055d0f4fa33c2 in workload() ()
+#11 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#12 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#13 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#14 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#15 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#16 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd260) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#17 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#18 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 70 (Thread 0x7f6684fb9700 (LWP 74760)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6684fb9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3630) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 69 (Thread 0x7f668c7c8700 (LWP 74745)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668c7c8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcafb0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 68 (Thread 0x7f669dfeb700 (LWP 74710)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669dfeb168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd2f90) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 67 (Thread 0x7f669d7ea700 (LWP 74711)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669d7ea168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3230) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 66 (Thread 0x7f66ae994700 (LWP 74685)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66ae994168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc970) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 65 (Thread 0x7f66a4ff9700 (LWP 74696)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a4ff9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd280) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 64 (Thread 0x7f66ad992700 (LWP 74687)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66ad992168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd310) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 63 (Thread 0x7f66b1199700 (LWP 74680)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66b1199168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcbbf0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 62 (Thread 0x7f66ae193700 (LWP 74686)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66ae193168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa333a in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fccc10) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 61 (Thread 0x7f66b199a700 (LWP 74679)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66b199a168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3300 in foo(int) ()
+#8  0x000055d0f4fa3377 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcb930) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 60 (Thread 0x7f66af195700 (LWP 74684)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66af195168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc6d0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 59 (Thread 0x7f667dfab700 (LWP 74774)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667dfab168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa336f in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdda10) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 58 (Thread 0x7f66ad191700 (LWP 74688)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66ad191168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd220) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 57 (Thread 0x7f66ac990700 (LWP 74689)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66ac990168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd330) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 56 (Thread 0x7f667d7aa700 (LWP 74775)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667d7aa168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fddcb0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 55 (Thread 0x7f667e7ac700 (LWP 74773)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667e7ac168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3367 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdd770) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 54 (Thread 0x7f667efad700 (LWP 74772)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667efad168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdd4d0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 53 (Thread 0x7f667ffaf700 (LWP 74770)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667ffaf168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdcf90) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 52 (Thread 0x7f667bfa7700 (LWP 74778)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667bfa7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fde490) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 51 (Thread 0x7f667c7a8700 (LWP 74777)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667c7a8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fde1f0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 50 (Thread 0x7f66a47f8700 (LWP 74697)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a47f8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3382 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd2a0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 49 (Thread 0x7f667cfa9700 (LWP 74776)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667cfa9168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3382 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fddf50) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 48 (Thread 0x7f66a3ff7700 (LWP 74698)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a3ff7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3382 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd190) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 47 (Thread 0x7f667f7ae700 (LWP 74771)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f667f7ae168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa333a in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdd230) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 46 (Thread 0x7f66807b0700 (LWP 74769)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66807b0168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3382 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdccf0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 45 (Thread 0x7f6680fb1700 (LWP 74768)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6680fb1168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdca50) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 44 (Thread 0x7f66a0ff1700 (LWP 74704)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a0ff1168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd1fd0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 43 (Thread 0x7f66a7fff700 (LWP 74690)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a7fff168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd350) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 42 (Thread 0x7f669c7e8700 (LWP 74713)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669c7e8168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd0aa0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 41 (Thread 0x7f66937d6700 (LWP 74731)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66937d6168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66937d6700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 40 (Thread 0x7f667b7a6700 (LWP 74779)):
+#0  0x00007f66b3845970 in pthread_cond_wait@@GLIBC_2.3.2 () from /lib64/libpthread.so.0
+#1  0x00007f66b31940cc in __gthread_cond_wait (__mutex=<optimized out>, __cond=__cond@entry=0x55d0f6fcad60)
+    at /home/GaussDBKernel/tools/gcc-7.3.0/x86_64-pc-linux-gnu/libstdc++-v3/include/x86_64-pc-linux-gnu/bits/gthr-default.h:864
+#2  std::condition_variable::wait (this=this@entry=0x55d0f6fcad60, __lock=...) at ../../../.././libstdc++-v3/src/c++11/condition_variable.cc:53
+#3  0x00007f66b3513cdb in wait<BufferManager::write_dirty_buffers()::<lambda()> > (__p=..., __lock=..., this=0x55d0f6fcad60)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/condition_variable:99
+#4  write_dirty_buffers (this=0x55d0f6fcac60) at /home/lab/proj/LetBroRock-wkx/include/buffer_manager.h:147
+#5  operator() (__closure=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/buffer_manager.h:122
+#6  __invoke_impl<void, BufferManager::start_writer_thread()::<lambda()> > (__f=<optimized out>)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/invoke.h:60
+#7  __invoke<BufferManager::start_writer_thread()::<lambda()> > (__fn=<optimized out>)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/invoke.h:95
+#8  _M_invoke<0> (this=<optimized out>) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/thread:234
+#9  operator() (this=<optimized out>) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/thread:243
+#10 std::thread::_State_impl<std::thread::_Invoker<std::tuple<BufferManager::start_writer_thread()::{lambda()#1}> > >::_M_run() (this=<optimized out>)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/thread:186
+#11 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x7f66a80a2530) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#12 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#13 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 39 (Thread 0x7f66a27f4700 (LWP 74701)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66a27f4168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd1f0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 38 (Thread 0x7f66af996700 (LWP 74683)):
+#0  0x00007f66b267f89e in d_r_vsnprintf (s=0x7f66b27dd886 <exepath.22262+6> "", s@entry=0x7f66b27dd880 <exepath.22262> "/proc/", max=max@entry=512, 
+    fmt=fmt@entry=0x7f66b27322d0 "/proc/%d/exe", ap=ap@entry=0x7f66af9949d8) at /home/runner/work/dynamorio/dynamorio/core/iox.h:422
+#1  0x00007f66b2682340 in d_r_vsnprintf (ap=0x7f66af9949d8, fmt=0x7f66b27322d0 "/proc/%d/exe", max=512, s=0x7f66b27dd880 <exepath.22262> "/proc/")
+    at /home/runner/work/dynamorio/dynamorio/core/iox.h:295
+#2  d_r_snprintf (s=s@entry=0x7f66b27dd880 <exepath.22262> "/proc/", max=max@entry=512, fmt=fmt@entry=0x7f66b27322d0 "/proc/%d/exe")
+    at /home/runner/work/dynamorio/dynamorio/core/iox.h:748
+#3  0x00007f66b26ec8d8 in read_proc_self_exe (ignore_cache=false) at /home/runner/work/dynamorio/dynamorio/core/unix/os.c:9667
+#4  get_application_name_helper (full_path=false, ignore_cache=false) at /home/runner/work/dynamorio/dynamorio/core/unix/os.c:1138
+#5  get_application_short_name () at /home/runner/work/dynamorio/dynamorio/core/unix/os.c:1216
+#6  0x00007f66b264e115 in config_read (cfg=cfg@entry=0x7f66b27c2b40 <config>, appname_in=appname_in@entry=0x0, pid=pid@entry=0, 
+    sfx=sfx@entry=0x7f66b271ffc7 "config64") at /home/runner/work/dynamorio/dynamorio/core/config.c:407
+#7  0x00007f66b264f21d in d_r_config_init () at /home/runner/work/dynamorio/dynamorio/core/config.c:625
+#8  0x00007f66b26265d7 in standalone_init () at /home/runner/work/dynamorio/dynamorio/core/dynamo.c:921
+#9  0x00007f66b268a8f9 in dr_standalone_init () at /home/runner/work/dynamorio/dynamorio/core/lib/instrument.c:2426
+#10 0x00007f66b351097f in ThreadContext (this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/thread_context.h:42
+#11 __tls_init () at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#12 0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#13 <signal handler called>
+#14 0x000055d0f4fa3353 in long_for(long long) ()
+#15 0x000055d0f4fa33c2 in workload() ()
+#16 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#17 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#18 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#19 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#20 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#21 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcc3e0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#22 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#23 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 37 (Thread 0x7f6681fb3700 (LWP 74766)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6681fb3168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa3353 in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdc510) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 36 (Thread 0x7f66a1ff3700 (LWP 74702)):
+#0  decode_entry (pinternal=0x7f66a1ff1230) at /home/lab/proj/LetBroRock-wkx/third_party/AMED/source/x86/decoder.c:1947
+#1  amed_x86_decode_insn (pcontext=<optimized out>, pinsn=0x7f66a1ff1310) at /home/lab/proj/LetBroRock-wkx/third_party/AMED/source/x86/decoder.c:2015
+#2  0x00007f66b35156b4 in find_next_branch (tcontext=..., pc=pc@entry=94355951596368, length=length@entry=15536)
+    at /home/lab/proj/LetBroRock-wkx/src/utils/utils.cpp:55
+#3  0x00007f66b350f6f4 in find_next_unresolved_branch (tcontext=..., pc=pc@entry=94355951596368) at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:103
+#4  0x00007f66b3511e3a in sampling_handler (signum=<optimized out>, info=<optimized out>, ucontext=0x7f66a1ff1b80)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:333
+#5  <signal handler called>
+#6  0x000055d0f4fa3350 in long_for(long long) ()
+#7  0x000055d0f4fa33c2 in workload() ()
+#8  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#9  0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#10 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#11 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#12 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#13 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd1a90) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#14 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#15 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 35 (Thread 0x7f66a17f2700 (LWP 74703)):
+#0  decode_entry (pinternal=0x7f66a17f0230) at /home/lab/proj/LetBroRock-wkx/third_party/AMED/source/x86/decoder.c:1947
+#1  amed_x86_decode_insn (pcontext=<optimized out>, pinsn=0x7f66a17f0310) at /home/lab/proj/LetBroRock-wkx/third_party/AMED/source/x86/decoder.c:2015
+#2  0x00007f66b35156b4 in find_next_branch (tcontext=..., pc=pc@entry=94355951596418, length=length@entry=15486)
+    at /home/lab/proj/LetBroRock-wkx/src/utils/utils.cpp:55
+#3  0x00007f66b350f6f4 in find_next_unresolved_branch (tcontext=..., pc=pc@entry=94355951596418) at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:103
+#4  0x00007f66b3511e3a in sampling_handler (signum=<optimized out>, info=<optimized out>, ucontext=0x7f66a17f0b80)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:333
+#5  <signal handler called>
+#6  0x000055d0f4fa3382 in long_for(long long) ()
+#7  0x000055d0f4fa33c2 in workload() ()
+#8  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#9  0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#10 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#11 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#12 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#13 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd1d30) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#14 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#15 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 34 (Thread 0x7f66837b6700 (LWP 74763)):
+#0  0x00007f66b2877293 in new_heap () from /lib64/libc.so.6
+#1  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66837b6168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x000055d0f4fa336f in long_for(long long) ()
+#8  0x000055d0f4fa33c2 in workload() ()
+#9  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#10 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#11 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#12 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#13 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#14 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3690) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#15 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#16 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 33 (Thread 0x7f66957da700 (LWP 74727)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66957da168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66957da700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 32 (Thread 0x7f66977de700 (LWP 74723)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66977de168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66977de700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 31 (Thread 0x7f669a7e4700 (LWP 74717)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669a7e4168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f669a7e4700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 30 (Thread 0x7f668dfcb700 (LWP 74742)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668dfcb168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f668dfcb700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 29 (Thread 0x7f66927d4700 (LWP 74733)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66927d4168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66927d4700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 28 (Thread 0x7f6686fbd700 (LWP 74756)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6686fbd168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd35b0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 27 (Thread 0x7f66907d0700 (LWP 74737)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66907d0168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66907d0700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 26 (Thread 0x7f6698fe1700 (LWP 74720)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6698fe1168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6698fe1700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 25 (Thread 0x7f6690fd1700 (LWP 74736)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6690fd1168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6690fd1700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 24 (Thread 0x7f66817b2700 (LWP 74767)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66817b2168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fdc7b0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 23 (Thread 0x7f668e7cc700 (LWP 74741)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668e7cc168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f668e7cc700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 22 (Thread 0x7f66857ba700 (LWP 74759)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66857ba168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3610) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 21 (Thread 0x7f66887c0700 (LWP 74753)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66887c0168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa335c in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3550) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 20 (Thread 0x7f6685fbb700 (LWP 74758)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6685fbb168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd35f0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 19 (Thread 0x7f66897c2700 (LWP 74751)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66897c2168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3510) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 18 (Thread 0x7f6699fe3700 (LWP 74718)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6699fe3168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6699fe3700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 17 (Thread 0x7f668ffcf700 (LWP 74738)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668ffcf168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f668ffcf700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 16 (Thread 0x7f66867bc700 (LWP 74757)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66867bc168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd35d0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 15 (Thread 0x7f6696fdd700 (LWP 74724)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6696fdd168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6696fdd700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 14 (Thread 0x7f6687fbf700 (LWP 74754)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6687fbf168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3570) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 13 (Thread 0x7f6682fb5700 (LWP 74764)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6682fb5168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd36b0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 12 (Thread 0x7f669afe5700 (LWP 74716)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f669afe5168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f669afe5700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 11 (Thread 0x7f6697fdf700 (LWP 74722)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6697fdf168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6697fdf700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 10 (Thread 0x7f669ffef700 (LWP 74706)):
+#0  0x00007f66b384854d in __lll_lock_wait () from /lib64/libpthread.so.0
+#1  0x00007f66b3843e9b in _L_lock_883 () from /lib64/libpthread.so.0
+#2  0x00007f66b3843d68 in pthread_mutex_lock () from /lib64/libpthread.so.0
+#3  0x00007f66b3510afb in __gthread_mutex_lock (__mutex=0x55d0f6fcad08)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/x86_64-pc-linux-gnu/bits/gthr-default.h:748
+#4  lock (this=0x55d0f6fcad08) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:103
+#5  lock (this=0x7f669ffedb40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:267
+#6  unique_lock (__m=..., this=0x7f669ffedb40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:197
+#7  get_clean_buffer (this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/buffer_manager.h:90
+#8  set_buffer_manager (buffer_manager=<optimized out>, this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/thread_context.h:103
+#9  construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>) at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:166
+#10 <signal handler called>
+#11 0x000055d0f4fa3353 in long_for(long long) ()
+#12 0x000055d0f4fa33c2 in workload() ()
+#13 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#14 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#15 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#16 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#17 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#18 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd2510) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#19 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#20 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 9 (Thread 0x7f6683fb7700 (LWP 74762)):
+#0  0x00007f66b28f0fca in mmap64 () from /lib64/libc.so.6
+#1  0x00007f66b2877260 in new_heap () from /lib64/libc.so.6
+#2  0x00007f66b28778d4 in arena_get2.isra.3 () from /lib64/libc.so.6
+#3  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#4  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#5  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6683fb7168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#6  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#7  <signal handler called>
+#8  0x000055d0f4fa3353 in long_for(long long) ()
+#9  0x000055d0f4fa33c2 in workload() ()
+#10 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#11 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#12 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#13 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#14 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#15 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd3670) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#16 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#17 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 8 (Thread 0x7f669f7ee700 (LWP 74707)):
+#0  0x00007f66b384854d in __lll_lock_wait () from /lib64/libpthread.so.0
+#1  0x00007f66b3843e9b in _L_lock_883 () from /lib64/libpthread.so.0
+#2  0x00007f66b3843d68 in pthread_mutex_lock () from /lib64/libpthread.so.0
+#3  0x00007f66b3510afb in __gthread_mutex_lock (__mutex=0x55d0f6fcad08)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/x86_64-pc-linux-gnu/bits/gthr-default.h:748
+#4  lock (this=0x55d0f6fcad08) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:103
+#5  lock (this=0x7f669f7ecb40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:267
+#6  unique_lock (__m=..., this=0x7f669f7ecb40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:197
+#7  get_clean_buffer (this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/buffer_manager.h:90
+#8  set_buffer_manager (buffer_manager=<optimized out>, this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/thread_context.h:103
+#9  construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>) at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:166
+#10 <signal handler called>
+#11 0x000055d0f4fa3353 in long_for(long long) ()
+#12 0x000055d0f4fa33c2 in workload() ()
+#13 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#14 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#15 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#16 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#17 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#18 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fd27b0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#19 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#20 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 7 (Thread 0x7f66a2ff5700 (LWP 74700)):
+#0  0x00007f66b384854d in __lll_lock_wait () from /lib64/libpthread.so.0
+#1  0x00007f66b3843e9b in _L_lock_883 () from /lib64/libpthread.so.0
+#2  0x00007f66b3843d68 in pthread_mutex_lock () from /lib64/libpthread.so.0
+#3  0x00007f66b3510afb in __gthread_mutex_lock (__mutex=0x55d0f6fcad08)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/x86_64-pc-linux-gnu/bits/gthr-default.h:748
+#4  lock (this=0x55d0f6fcad08) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:103
+#5  lock (this=0x7f66a2ff3b40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:267
+#6  unique_lock (__m=..., this=0x7f66a2ff3b40) at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/bits/std_mutex.h:197
+#7  get_clean_buffer (this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/buffer_manager.h:90
+#8  set_buffer_manager (buffer_manager=<optimized out>, this=<optimized out>) at /home/lab/proj/LetBroRock-wkx/include/thread_context.h:103
+#9  construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>) at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:166
+#10 <signal handler called>
+#11 0x000055d0f4fa3353 in long_for(long long) ()
+#12 0x000055d0f4fa33c2 in workload() ()
+#13 0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#14 0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#15 0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#16 0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#17 0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#18 0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fcd1d0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#19 0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#20 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 6 (Thread 0x7f6692fd5700 (LWP 74732)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f6692fd5168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f6692fd5700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 5 (Thread 0x7f66b219b700 (LWP 74678)):
+#0  0x00007f66b3848e9d in nanosleep () from /lib64/libpthread.so.0
+#1  0x00007f66b350ff75 in sleep_for<long, std::ratio<1, 1000> > (__rtime=...)
+    at /home/lab/proj/opengauss/binarylibs/buildtools/gcc7.3/gcc/include/c++/7.3.0/thread:376
+#2  profiler_main_thread () at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:397
+#3  0x000055d0f4fa3e62 in void std::__invoke_impl<void, void (*)()>(std::__invoke_other, void (*&&)()) ()
+#4  0x000055d0f4fa3e25 in std::__invoke_result<void (*)()>::type std::__invoke<void (*)()>(void (*&&)()) ()
+#5  0x000055d0f4fa3dfd in std::thread::_Invoker<std::tuple<void (*)()> >::_M_invoke<0ul> ()
+#6  0x000055d0f4fa3dd5 in std::thread::_Invoker<std::tuple<void (*)()> >::operator()() ()
+#7  0x000055d0f4fa3cf9 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<void (*)()> > >::_M_run() ()
+#8  0x00007f66b3199f1f in std::execute_native_thread_routine (__p=0x55d0f6fccef0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:83
+#9  0x00007f66b3841ea5 in start_thread () from /lib64/libpthread.so.0
+#10 0x00007f66b28f6b0d in clone () from /lib64/libc.so.6
+
+Thread 4 (Thread 0x7f66987e0700 (LWP 74721)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66987e0168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66987e0700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 3 (Thread 0x7f66b3c56d00 (LWP 74677)):
+#0  0x00007f66b3843017 in pthread_join () from /lib64/libpthread.so.0
+#1  0x00007f66b319a1a3 in __gthread_join (__value_ptr=0x0, __threadid=<optimized out>)
+    at /home/GaussDBKernel/tools/gcc-7.3.0/x86_64-pc-linux-gnu/libstdc++-v3/include/x86_64-pc-linux-gnu/bits/gthr-default.h:668
+#2  std::thread::join (this=0x55d0f6fd89e0) at ../../../.././libstdc++-v3/src/c++11/thread.cc:136
+#3  0x000055d0f4fa34f7 in main ()
+
+Thread 2 (Thread 0x7f66967dc700 (LWP 74725)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f66967dc168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f66967dc700 in ?? ()
+#10 0x0000000000000000 in ?? ()
+
+Thread 1 (Thread 0x7f668f7ce700 (LWP 74739)):
+#0  0x00007f66b28f5084 in get_nprocs () from /lib64/libc.so.6
+#1  0x00007f66b2877726 in arena_get2.isra.3 () from /lib64/libc.so.6
+#2  0x00007f66b287d77e in malloc () from /lib64/libc.so.6
+#3  0x00007f66b316f48d in operator new (sz=sz@entry=24) at ../../.././libstdc++-v3/libsupc++/new_opnt.cc:43
+#4  0x00007f66b316d056 in __cxxabiv1::__cxa_thread_atexit (dtor=0x7f66b3513700 <ThreadContext::~ThreadContext()>, obj=0x7f668f7ce168)
+    at ../../.././libstdc++-v3/libsupc++/atexit_thread.cc:146
+#5  0x00007f66b3510a61 in construct_handler (signum=<optimized out>, info=<optimized out>, ucontext=<optimized out>)
+    at /home/lab/proj/LetBroRock-wkx/src/engine/main.cpp:34
+#6  <signal handler called>
+#7  0x00007f66b28f6ad1 in clone () from /lib64/libc.so.6
+#8  0x00007f66b3841de0 in ?? () from /lib64/libpthread.so.0
+#9  0x00007f668f7ce700 in ?? ()
+#10 0x0000000000000000 in ?? ()

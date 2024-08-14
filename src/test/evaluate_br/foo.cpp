@@ -23,7 +23,7 @@ int foo(int i)
   return bar(i) + 2;
 }
 
-auto long_for(int loop_cnt) -> int
+auto long_for(long long loop_cnt) -> int
 {
   int fuck_cnt = 0;
   for (int i = 0; i < loop_cnt; i++)
@@ -45,7 +45,7 @@ void workload()
 {
   // sleep(1);
   asm volatile("" : : : "memory");
-  int a = long_for(47483647);
+  int a = long_for(47483647L);
   asm volatile("" : : : "memory");
   std::cout << a << std::endl;
 }
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 {
   std::vector<std::thread> threads;
 
-  int thread_num = atoi(argv[1]);
+  int thread_num = 100;
   int count = 100;
   while (count--)
   {

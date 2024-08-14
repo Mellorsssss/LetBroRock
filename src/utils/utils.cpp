@@ -108,7 +108,7 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
     assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
     // if (!is_control_flow_transfer(insn))
     // return std::make_pair(UNKNOWN_ADDR, false);
-    auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn) : evaluate(tcontext.get_dr_context(), *tcontext.get_instr(), acontext, insn, &context);
+    auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn) : evaluate(tcontext.get_dr_context(), acontext, insn, &context);
     if (taken)
     {
       if (static_eval)
@@ -261,11 +261,17 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
   if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) || AMED_CATEGORY_CALL == insn.categories[1])
   {
-    instr_t d_insn;
-    instr_init(tcontext.get_dr_context(), &d_insn);
-
+     instr_noalloc_t noalloc;;
+    instr_noalloc_init(tcontext.get_dr_context(),&noalloc);
+    instr_t *d_insn = instr_from_noalloc(&noalloc);
+    // instr_init(tcontext.get_dr_context(), &d_insn);
+// instr_noalloc_t noalloc;
+    // instr_noalloc_init(thread_dr_context_, &noalloc);
+    // d_insn_ = instr_from_noalloc(&noalloc);
+    
+    
     DEBUG("static_evaluate: try to decode the instruction");
-    if (decode(tcontext.get_dr_context(), (byte *)pc, &d_insn) == nullptr)
+    if (decode(tcontext.get_dr_context(), (byte *)pc, d_insn) == nullptr)
     {
       ERROR("fail to decode the instruction using dynamorio");
     }
@@ -274,7 +280,7 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
       DEBUG("static_evaluate: succeed to decode the instruction using dynamorio");
     }
 
-    opnd_t target_op = instr_get_target(&d_insn);
+    opnd_t target_op = instr_get_target(d_insn);
     uint64_t target_addr = UNKNOWN_ADDR;
     if (opnd_is_immed(target_op))
     {
@@ -315,7 +321,6 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
       DEBUG("static_evaluate: the target is not imm");
     }
 
-    instr_free(tcontext.get_dr_context(), &d_insn);
     WARNING("taken branch: %#lx -> %#lx", pc, target_addr);
     return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? false : true);
   }
@@ -325,24 +330,29 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
   }
 }
 
-std::pair<uint64_t, bool> evaluate(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
 #if defined(__x86_64__)
-  return evaluate_x86(dr_context, d_insn, context, insn, ucontext);
+  return evaluate_x86(dr_context, context, insn, ucontext);
 #elif define(aarch64)
-  return evaluate_arm(dr_context, d_insn, context, insn, ucontext);
+  return evaluate_arm(dr_context, context, insn, ucontext);
 #endif
 }
 
-std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
+std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
   dr_mcontext_t mcontext;
+  void *dr_context = dr_get_current_drcontext();
   init_dr_mcontext(&mcontext, ucontext);
-  byte *addr = (byte *)(get_pc(ucontext));
+  // instr_init(tcontext.get_dr_context(), &d_insn);
+  instr_noalloc_t noalloc;
+  instr_noalloc_init(dr_context, &noalloc);
+  instr_t *d_insn = instr_from_noalloc(&noalloc);
+  byte *addr = (byte *)(get_pc(ucontext)); 
 
-  if (decode(dr_context, addr, &d_insn) == nullptr)
+  if (decode(dr_context, addr, d_insn) == nullptr)
   {
     ERROR("fail to decode the instruction using dynamorio");
   }
@@ -355,22 +365,22 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
   // judge what kind of the instruction is
   if (AMED_CATEGORY_BRANCH == insn.categories[1])
   {
-    assert(instr_is_cbr(&d_insn) || instr_is_ubr(&d_insn) || instr_is_mbr(&d_insn));
+    assert(instr_is_cbr(d_insn) || instr_is_ubr(d_insn) || instr_is_mbr(d_insn));
   }
   else if (AMED_CATEGORY_CALL == insn.categories[1])
   {
-    assert(instr_is_call(&d_insn));
+    assert(instr_is_call(d_insn));
   }
   else if (AMED_CATEGORY_RET == insn.categories[1])
   {
-    assert(instr_is_return(&d_insn));
+    assert(instr_is_return(d_insn));
   }
   else
   {
     puts("interworking branch.");
   }
 
-  opnd_t target_op = instr_get_target(&d_insn);
+  opnd_t target_op = instr_get_target(d_insn);
   app_pc target_address = nullptr;
   uint64_t target_addr = UNKNOWN_ADDR;
   if (opnd_is_memory_reference(target_op))
@@ -410,9 +420,9 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
   }
   else if (opnd_is_reg(target_op))
   {
-    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext); // TODO: is this always offset?
+    target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext);// TODO: is this always offset?
     // if the instruction is ret, then just jump to the exact address
-    if (!instr_is_return(&d_insn)) {
+    if (!instr_is_return(d_insn)) {
       target_addr += insn.length;
     } else {
       target_addr = *((uint64_t*)target_addr);
@@ -439,12 +449,12 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
   }
 
   bool taken = true;
-  if (instr_is_cbr(&d_insn))
+  if (instr_is_cbr(d_insn))
   {
     DEBUG("begin to eval cbr");
     uint32_t eflags = mcontext.xflags;
 
-    switch (instr_get_opcode(&d_insn))
+    switch (instr_get_opcode(d_insn))
     {
     case OP_jb:
     case OP_jb_short:
@@ -552,7 +562,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, instr_t& d_insn, amed_c
 std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext)
 {
 // TODO(guichuan): determin if an cti instruction is taken
-#if defined(aarch64)
+#if defined(__aarch64__)
   assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
   dr_mcontext_t mcontext;

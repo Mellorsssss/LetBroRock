@@ -40,7 +40,11 @@ public:
 
     // init the dr_context
     thread_dr_context_ = dr_standalone_init();
-    instr_init(thread_dr_context_, &d_insn_);
+    // instr_noalloc_t noalloc;
+    // instr_noalloc_init(thread_dr_context_, &noalloc);
+    // d_insn_ = instr_from_noalloc(&noalloc);
+    // pc = decode(dcontext, ptr, instr);
+    // instr_init(thread_dr_context_, &d_insn_);
 #if defined(__x86_64__)
     if (!dr_set_isa_mode(thread_dr_context_, DR_ISA_AMD64, nullptr))
 #elif defined(__aarch64__)
@@ -50,15 +54,15 @@ public:
       ERROR("fail to set the isa mode.");
     }
 
-    stack_lbr_entry_reset();
+    reset_entry();
     reset_branch();
   }
 
   ~ThreadContext()
   {
-    dr_standalone_exit();
     // TODO: uncomment the following line will cause seg fault
-    instr_free(thread_dr_context_, &d_insn_);
+    // instr_free(thread_dr_context_, &d_insn_);
+    dr_standalone_exit();
 
     destroy();
   }
@@ -68,12 +72,12 @@ public:
     WARNING("destroy the ThreadContext of thread %d", tid_);
     close_perf_sampling_event();
     close_perf_breakpoint_event();
-    // reset();
     if (thread_buffer_ != nullptr && buffer_manager_ != nullptr)
     {
       INFO("thread %d return the diry buffer", this->tid_);
       buffer_manager_->return_dirty_buffer(thread_buffer_);
     }
+    reset_entry();
     thread_buffer_ = nullptr;
     WARNING("the thread %d records %d(%d, %d) branches.", tid_, branch_static_cnt_ + branch_dyn_cnt_, branch_static_cnt_, branch_dyn_cnt_);
   }
@@ -83,9 +87,14 @@ public:
     reset_branch();
   }
 
+  void reset_entry()
+  {
+    thread_stack_lbr_entry_.reset();
+    reset_branch();
+  }
+
   void set_buffer_manager(BufferManager *buffer_manager)
   {
-    if(buffer_manager_!=nullptr) {return;}
     buffer_manager_ = buffer_manager;
     thread_buffer_ = buffer_manager_->get_clean_buffer();
     assert(thread_buffer_ != nullptr && "buffer get can't be nullptr");
@@ -100,7 +109,7 @@ public:
 
   void *get_dr_context() const { return thread_dr_context_; }
   
-  instr_t* get_instr() { return &d_insn_;}
+  instr_t* get_instr() { return  d_insn_;}
 
   /** thread perf events state/control **/
   int get_sampling_fd() const { return sampling_fd_; }
@@ -160,9 +169,9 @@ public:
       return;
     }
 
+    INFO("close pef sampling event %d(%d)", tid_, sampling_fd_);
+ 
     sampling_fd_ = -1;
-
-    INFO("close pef sampling event %d", tid_);
     return;
   }
 
@@ -179,8 +188,6 @@ public:
     bp_addr_ = UNKNOWN_ADDR;
     state_ = thread_state::SAMPLING;
 
-    
-
     if (close(bp_fd_) != 0)
     {
       perror("close");
@@ -189,7 +196,7 @@ public:
       return;
     }
 
-    WARNING("close perf bp event %d", tid_);
+    WARNING("close perf bp event %d(fd: %d)", tid_, bp_fd_);
     bp_fd_ = -1;
     return;
   }
@@ -238,7 +245,7 @@ private:
   } thread_state;
 
   void *thread_dr_context_{nullptr};
-  instr_t d_insn_;
+  instr_t *d_insn_;
 
   thread_state state_{thread_state::CLOSED};
 

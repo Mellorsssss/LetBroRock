@@ -24,14 +24,14 @@
 #include <ucontext.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <chrono>
 
-constexpr int MAX_THREAD_NUM = 200;
+constexpr int MAX_THREAD_NUM = 50;
 
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND (SIGBEGIN + 1)
 
 thread_local ThreadContext thread_local_context;
-thread_local int n = 0;
 ExecutableSegments *executable_segments = nullptr;
 BufferManager* buffer_manager = nullptr;
 
@@ -64,6 +64,26 @@ private:
     sigset_t old_set;
 };
 
+class TimerGuard
+{
+public:
+    TimerGuard(const std::string& name)
+        :name_(name), start_(std::chrono::high_resolution_clock::now())
+    {
+    }
+
+    ~TimerGuard()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = end - start_;
+        INFO("took %.2f ms", elapsed.count());
+    }
+
+private:
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+    std::string name_;
+};
+
 /**
  * iterate instructions from `pc`.
  * If instruction is not cti, keep iterating;
@@ -79,7 +99,7 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc)
     {
         //  ERROR("Branch PC: %#lx", pc);
         int length = executable_segments->getExecutableSegmentSize(pc);
-        // length=2;
+        
         bool found = find_next_branch(tcontext, pc,length);
         if (!found)
         {
@@ -141,19 +161,14 @@ void signal_posthandle(sigset_t &old_set)
 
 void construct_handler(int signum, siginfo_t *info, void *ucontext)
 {
-    SignalGuard signal_guard;
-    n+=1;
-    // ERROR("construct_handler the value of n is %d",n);
     DEBUG("construct_handler call in %d", thread_local_context.get_tid());
-    thread_local_context.open_perf_sampling_event();
+   
     thread_local_context.set_buffer_manager(buffer_manager);
+     thread_local_context.open_perf_sampling_event();
 }
 
 void destruct_handler(int signum, siginfo_t *info, void *ucontext)
 {
-    SignalGuard signal_guard;
-    n-=1;
-    // ERROR("destruct_handler the value of n is %d",n);
     DEBUG("destruct_handler call in %d", thread_local_context.get_tid());
     thread_local_context.destroy();
 }
@@ -161,17 +176,14 @@ void destruct_handler(int signum, siginfo_t *info, void *ucontext)
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 {
     if (errno != 0) {
-        WARNING("invalid errno %d", errno);
-        errno = 0;
+        ERROR("invalid errno %d", errno);
+        // drop the data collected in the current stack_lbr_entry
+        // thread_local_context.reset_entry();
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
-    
-    SignalGuard signal_guard;
-    print_backtrace();
-    thread_local_context.close_perf_sampling_event();
+
     assert(errno != EINTR && "breakpoint should not hit the syscall");
     assert(thread_local_context.get_tid() == syscall(SYS_gettid) && "thread_local_context with wrong tid");
 
@@ -186,16 +198,16 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("breakpoint hit when the thread is not in breakpoint");
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset();
+        // thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
-         return;
+        return;
     }
 
     if (thread_local_context.get_breakpoint_fd() != info->si_fd)
     {
-       ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
+        ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_breakpoint_fd());
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset();
+        // thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -208,7 +220,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     {
         ERROR("real breakpoint %#lx is different from setted breakpoint addr %#lx", pc, bp_addr);
         thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset();
+        // thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -216,24 +228,25 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     // we should disable the breakpoint at the immediately
     thread_local_context.close_perf_breakpoint_event();
 
-    DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, syscall(SYS_gettid));
+    DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, thread_local_context.get_tid());
 
     auto [target, taken] = check_branch_if_taken(thread_local_context, *uc, false);
     if (taken)
     {
         if (thread_local_context.stack_lbr_entry_full())
         {
-            WARNING("call stack sample check point");
+            INFO("%d call stack sample check point", thread_local_context.get_tid());
 
             thread_local_context.reset_unwind();
             uint8_t real_frame_size;
             if (!thread_local_context.unwind((siginfo_t *)info, ucontext, thread_local_context.get_entry()->get_stack_buffer(), MAX_FRAME_SIZE, real_frame_size))
             {
-                ERROR("fail to get the call stack");
+                ERROR("%d fail to get the call stack", thread_local_context.get_tid());
             }
 
             thread_local_context.get_entry()->set_stack_size(real_frame_size);
             thread_local_context.reset();
+            INFO("%d unwind %d stack frames", thread_local_context.get_tid(), real_frame_size);
 
             thread_local_context.enable_perf_sampling_event();
             return;
@@ -251,8 +264,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
     if (!executable_segments->isAddressInExecutableSegment(next_from_addr))
     {
         ERROR("breakpoint handler triggered at un-executable pc %lx", next_from_addr);
-        thread_local_context.close_perf_breakpoint_event();
-        // thread_local_context.reset();
+        thread_local_context.reset_entry();
         thread_local_context.enable_perf_sampling_event();
         return;
     }
@@ -271,15 +283,14 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext)
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 {
+    thread_local_context.disable_perf_sampling_event();
     if (errno != 0)
     {
-        WARNING("invalid errno %d", errno);
-        errno = 0;
-        WARNING("Sampling handler mitakenly interrupt a syscall, just return");
+        ERROR("thread %d Sampling handler mitakenly interrupt a syscall(%d, fd: %d), just return", thread_local_context.get_tid(), errno, info->si_fd);
+        thread_local_context.enable_perf_sampling_event();
         return;
     }
 
-    SignalGuard signal_guard;
     /**
      * preconditions:
      * 1. thread is in sampling mode
@@ -287,27 +298,24 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
      */
     if (!thread_local_context.is_sampling())
     {
-        WARNING("redudant sampling handler(probably from previous fd), just return");
+        ERROR("thread %d redudant sampling handler(probably from previous fd:%d), just return", thread_local_context.get_tid(), info->si_fd);
+        thread_local_context.enable_perf_sampling_event();
         return;
     }
 
     if (thread_local_context.get_sampling_fd() != info->si_fd)
     {
-        ERROR("sampling hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context.get_sampling_fd());
-        // thread_local_context. close_perf_sampling_event();;
+        ERROR("thread %d sampling hit with wrong fd:%d(expected %d)", thread_local_context.get_tid(), info->si_fd, thread_local_context.get_sampling_fd());
+        thread_local_context.enable_perf_sampling_event();
         return;
     }
 
-    thread_local_context.reset_branch(); // sampling_handler is the start of find new branch
-
-    print_backtrace();
+    INFO("%d reset the entry", thread_local_context.get_tid());
+    thread_local_context.reset_entry();
+    // thread_local_context.reset_branch();
 
     pid_t target_pid = syscall(SYS_gettid);
 
-    thread_local_context.disable_perf_sampling_event();
-
-    // trick: if sampling handler interrupt a syscall, we just simply return
-    
 
     ucontext_t *uc = (ucontext_t *)ucontext;
 
@@ -336,18 +344,19 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext)
 
 std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
 {
-    std::vector<pid_t> tids = get_tids(pid, std::vector<pid_t>{tid}, MAX_THREAD_NUM);
+    TimerGuard timer_guard("start profiler");
+    std::vector<pid_t> tids = get_tids(pid, std::vector<pid_t>{tid, pid}, MAX_THREAD_NUM);
 
     assert(tids.size() > 0 && "Target should has at least one thread.");
-    WARNING("main :%d and current %d", pid, tid);
+    INFO("main :%d and current %d", pid, tid);
 
     for (auto &tid : tids)
     {
-        WARNING("try to enable perf events for %d", tid);
-        ERROR("begin to start %d", tid);
+        INFO("begin to start %d", tid);
         if (tgkill(pid, tid, SIGBEGIN) != 0)
         {
-            WARNING("fail to begin %d", tid);
+            perror("tgkill");
+            ERROR("fail to begin %d", tid);
         }
     }
 
@@ -358,14 +367,14 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid)
 
 void stop_profiler(pid_t pid, std::vector<pid_t> &tids)
 {
+    TimerGuard timer_guard("start profiler");
     for (auto &tid : tids)
     {
-        WARNING("try to disable perf events for %d", tid);
-        ERROR("begin to stop %d", tid);
+        INFO("begin to stop %d", tid);
         if (tgkill(pid, tid, SIGEND) != 0)
         {
             perror("tgkill");
-            WARNING("fail to end %d", tid);
+            ERROR("fail to end %d", tid);
         }
     }
 
@@ -381,19 +390,18 @@ void profiler_main_thread()
 {
     pid_t pid = getpid();
     pid_t tid = syscall(SYS_gettid);
-
+    // buffer_manager->malloc_all_buffers();
     while (true)
     {   
         buffer_manager->malloc_all_buffers();
         auto tids = start_profiler(pid, tid);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         INFO("restart the profiler");
         stop_profiler(pid, tids);
         buffer_manager->delete_all_buffers();
-        // TODO: it's tricky to wait for the stop of all threads' destruction
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-
+    // buffer_manager->delete_all_buffers();
     delete buffer_manager;
     return;
 }
@@ -410,7 +418,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = construct_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        sigemptyset(&sa.sa_mask);
+        sigfillset(&sa.sa_mask);
         if (sigaction(SIGBEGIN, &sa, NULL) != 0)
         {
             perror("sigaction");
@@ -424,7 +432,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = destruct_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        sigemptyset(&sa.sa_mask);
+        sigfillset(&sa.sa_mask);
         if (sigaction(SIGEND, &sa, NULL) != 0)
         {
             perror("sigaction");
@@ -438,7 +446,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = sampling_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        sigemptyset(&sa.sa_mask);
+        sigfillset(&sa.sa_mask);
         if (sigaction(SIGIO, &sa, NULL) != 0)
         {
             perror("sigaction");
@@ -452,7 +460,7 @@ __attribute__((constructor)) void preload_main()
         memset(&sa, 0, sizeof(struct sigaction));
         sa.sa_sigaction = breakpoint_handler;
         sa.sa_flags = SA_SIGINFO | SA_RESTART;
-        sigemptyset(&sa.sa_mask);
+        sigfillset(&sa.sa_mask);
         if (sigaction(SIGRTMIN+4, &sa, NULL) != 0)
         {
             perror("sigaction");

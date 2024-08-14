@@ -62,7 +62,7 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr)
         exit(EXIT_FAILURE);
     }
 
-    DEBUG("successfully set breakpoint at %lx", pe.bp_addr);
+    DEBUG("%d successfully set breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_);
     if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
         ERROR("reset failure %d", tid_);
@@ -96,7 +96,7 @@ void ThreadContext::open_perf_sampling_event()
     pe.size = sizeof(struct perf_event_attr);
     pe.type = PERF_TYPE_HARDWARE;
     pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
-    pe.sample_period = 1000 * 5000;
+    pe.sample_period = 1000 * 5;
     pe.disabled = 1;
     pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
     pe.sample_type = PERF_SAMPLE_IP;
@@ -133,7 +133,7 @@ void ThreadContext::open_perf_sampling_event()
         exit(EXIT_FAILURE);
     }
 
-    ERROR("perf_events_enable: for %d(fd: %d)", owner.pid, this->sampling_fd_);
+    DEBUG("perf_events_enable: for %d(fd: %d)", owner.pid, this->sampling_fd_);
     // open perf_event
     if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_RESET, 0) != 0)
     {
@@ -162,15 +162,19 @@ bool ThreadContext::stack_lbr_entry_full()
 
 void ThreadContext::stack_lbr_entry_reset()
 {
-    DEBUG("begin to reset the lbr entry of thread %d", tid_);
+    INFO("push the lbr entry of thread %d", tid_);
     if (thread_buffer_ == nullptr)
     {
         WARNING("thread %d get null thread buffer", tid_);
     }
-    else if (false == thread_stack_lbr_entry_.serialize(thread_buffer_->get_current(), thread_buffer_->get_buffer_size()))
+    else if (thread_stack_lbr_entry_.get_stack_size() && false == thread_stack_lbr_entry_.serialize(thread_buffer_->get_current(), thread_buffer_->get_buffer_size()))
     {
         INFO("the buffer'size %d is less than needed size %d", thread_buffer_->get_buffer_size(), thread_stack_lbr_entry_.get_total_size());
-        thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_);//wait_clean_buffer
+        thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_); // wait_clean_buffer
+    }
+    
+    if (thread_stack_lbr_entry_.get_stack_size() == 0) {
+        INFO("%d fails to push an entry", tid_);
     }
 
     thread_stack_lbr_entry_.reset();
