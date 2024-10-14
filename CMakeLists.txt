@@ -9,7 +9,7 @@ add_compile_options("-w")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")
 
-add_definitions( -D LOG_LEVEL=LOG_DEBUG)
+add_definitions(-D LOG_LEVEL=LOG_DEBUG)
 # add_definitions( -D MY_ERROR)
 # add_definitions( -D NO_STATIC)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -18,7 +18,7 @@ file(GLOB SOURCES "src/engine/*.cpp" "src/utils/*.cpp")
 add_library(profiler SHARED ${SOURCES})
 
 
-target_include_directories(profiler PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/include/log ${PROJECT_SOURCE_DIR}/third_party/AMED/include ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/include)
+target_include_directories(profiler PUBLIC ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/include/log ${PROJECT_SOURCE_DIR}/third_party/AMED/include ${PROJECT_SOURCE_DIR}/third_party/DynamoRIO/include ${PROJECT_SOURCE_DIR}/third_party/concurrentqueue)
 
 target_compile_definitions(profiler PRIVATE LINUX X86_64)
 add_subdirectory(third_party)
