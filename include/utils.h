@@ -19,6 +19,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <functional>
+#include <stack>
 
 typedef struct user_regs_struct user_context;
 
@@ -46,7 +48,49 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, 
 std::pair<uint64_t, bool> evaluate_arm(void *dr_context, instr_t &d_insn, amed_context &context, amed_insn &insn,
                                        ucontext_t *ucontext);
 
-void print_backtrace();
 
 int tgkill(pid_t group_id, pid_t tid, int signo);
+
+class Deferrer
+{
+  public:
+    Deferrer() {}
+    ~Deferrer() { 
+      if (!canceled_)
+        callAll(); 
+    }
+
+    void addCall(std::function<void()> &&func)
+    {
+      callStack_.push(std::forward<decltype(func)>(func));
+    }
+
+    void cancel() { canceled_ = true; }
+    
+  private:
+    std::stack<std::function<void()>> callStack_;
+    bool canceled_{false};
+
+    void callAll()
+    {
+       while(!callStack_.empty())
+       {
+          callStack_.top()();
+          callStack_.pop();
+       }
+    }
+};
+
+// We might want perfect forwarding here, but that's in the TODO list for now
+#define defer(...) \
+  do { \
+    auto deferred = std::bind(__VA_ARGS__); \
+    __deferrer.addCall(deferred); \
+  } while(0);
+
+#define allow_deferred() \
+  Deferrer __deferrer;
+
+#define cancel_deferred() \
+  __deferrer.cancel();
 #endif

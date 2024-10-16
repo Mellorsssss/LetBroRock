@@ -42,12 +42,9 @@ private:
 	std::map<uintptr_t, uintptr_t> segment_map;
 
 	bool isProfiler(std::string pathname) {
-		return pathname.find("vdso") != std::string::npos || pathname.find("vsyscall") != std::string::npos ||
+		return pathname.find(".so") != std::string::npos || pathname.find("vdso") != std::string::npos || pathname.find("vsyscall") != std::string::npos ||
 		       pathname.find("profiler") != std::string::npos || pathname.find("unwind") != std::string::npos ||
 		       pathname.find("libdynamorio") != std::string::npos;
-		//  pathname.find("libc") != std::string::npos;
-		//  pathname.find("2.17") != std::string::npos||
-		//  pathname.find("7.3") != std::string::npos;
 	}
 	void parseProcMaps(bool exclude_shared_lib) {
 		std::ifstream mapsFile("/proc/self/maps");
@@ -74,12 +71,16 @@ private:
 			}
 
 			if (lineStream >> pathname) {
-				// printf("%s is executable\n", pathname.c_str());
+#ifdef DEBUG_PRINT
+				printf("%s is executable\n", pathname.c_str());
+#endif
 			}
-			// printf("find new executable segment: %#lx-%#lx %s\n", seg_start, seg_end, pathname.c_str());
+
+#ifdef DEBUG_PRINT
+			printf("find new executable segment: %#lx-%#lx %s\n", seg_start, seg_end, pathname.c_str());
+#endif
 
 			if ((exclude_shared_lib) && isProfiler(pathname)) {
-
 				continue;
 			}
 			printf("add new executable segment: %#lx-%#lx %s\n", seg_start, seg_end, pathname.c_str());

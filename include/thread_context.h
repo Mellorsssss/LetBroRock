@@ -18,6 +18,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 // void ERROR(const std::string &s);
+
+void print_backtrace();
+
 typedef struct _branch {
 	uintptr_t from_addr;
 	uintptr_t to_addr; // if to_addr is UNKNOWN_ADDR, it means this branch needs a breakpoint
@@ -32,7 +35,7 @@ uint64_t get_mmap_len();
 
 alignas(64) class ThreadContext {
 public:
-	ThreadContext() : handler_num(0), start_flag(false), sampling_fd_(-1), bp_fd_(-1) {
+	ThreadContext() : handler_num(0), sampling_fd_(-1), bp_fd_(-1) {
 		// init the dr_context
 		thread_dr_context_ = dr_standalone_init();
 #if defined(__x86_64__)
@@ -49,10 +52,9 @@ public:
 	}
 
 	~ThreadContext() {
-		// TODO: uncomment the following line will cause seg fault
-		dr_standalone_exit();
-
-		destroy();
+		WARNING("destruct a ThreadContext");
+		print_backtrace();
+		thread_context_destroy();
 	}
 
 	void thread_context_init() {
@@ -77,17 +79,18 @@ public:
 	}
 
 	void thread_start() {
-		start_flag = true;
+		state_ = INIT;
 	}
 
 	void thread_stop() {
-		start_flag = false;
+		state_ = CLOSED;
 		close_perf_sampling_event();
 		close_perf_breakpoint_event();
 	}
 
 	void destroy() {
-		WARNING("destroy the ThreadContext of thread %d", tid_);
+		if (tid_)
+			WARNING("destroy the ThreadContext of thread %d", tid_);
 
 		if (thread_buffer_ != nullptr && buffer_manager_ != nullptr) {
 			INFO("thread %d return the diry buffer", this->tid_);
@@ -95,7 +98,8 @@ public:
 		}
 		reset_entry();
 		thread_buffer_ = nullptr;
-		WARNING("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
+		if (tid_)
+			WARNING("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
 	}
 
 	void reset() {
@@ -104,7 +108,6 @@ public:
 	}
 
 	void reset_entry() {
-
 		drop_cnt_ += thread_stack_lbr_entry_.get_branch_size();
 		thread_stack_lbr_entry_.reset();
 		reset_branch();
@@ -287,33 +290,48 @@ public:
 
 private:
 	pid_t tid_ {0};
+
+	/**
+	 * ThreadContext is driven by a FSM. The state transfers as following:
+	 * 
+                                     ┌──────┐           ┌───────┐ 
+                                     │      │           │       │ 
+                                     │      │           │       │ 
+                                     │      ▼           │       ▼ 
+    CLOSED ────────► INIT ────────►  SAMPLING ────────► BREAKPOINT
+                                         ▲                  │     
+                                         │                  │     
+                                         │                  │     
+                                         └──────────────────┘     
+	 */
 	typedef enum _thread_state {
 		SAMPLING,
 		BREAKPOINT,
 		CLOSED,
+		INIT,
 	} thread_state;
+	thread_state state_ {thread_state::CLOSED};
 
+	/* decoding related */
 	void *thread_dr_context_ {nullptr};
 	instr_t *d_insn_;
 
-	thread_state state_ {thread_state::CLOSED};
-
 	uint64_t bp_addr_ {UNKNOWN_ADDR};
 	std::atomic<int> handler_num;
-	std::atomic<bool> start_flag;
 	ThreadUnwind thread_unwind_util_;
 	StackLBREntry thread_stack_lbr_entry_; //
 	std::shared_ptr<StackLBRBuffer> thread_buffer_ {nullptr};
 	BufferManager<StackLBRBuffer> *buffer_manager_ {nullptr};
+	branch cur_branch_ {.from_addr = UNKNOWN_ADDR, .to_addr = UNKNOWN_ADDR};
 
-	// perf_events related data structure
+	/* perf_events related */
 	std::atomic<int> sampling_fd_; // the fd of the sampling events, -1 for invalid
 	std::atomic<int> bp_fd_;       // the fd of breakpoint event, -1 for invalid
 
+	/* statistics */
 	int branch_static_cnt_ {0};
 	int branch_dyn_cnt_ {0};
 	int drop_cnt_ {0};
-	branch cur_branch_ {.from_addr = UNKNOWN_ADDR, .to_addr = UNKNOWN_ADDR};
 };
 
 #endif

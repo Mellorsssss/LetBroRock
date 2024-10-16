@@ -12,10 +12,11 @@ uint64_t get_mmap_len() {
 }
 
 void ThreadContext::open_perf_breakpoint_event(uint64_t addr) {
-	if (start_flag == false) {
-		DEBUG("stop profiling");
+	if (state_ & (thread_state::CLOSED || thread_state::INIT)) {
+		ERROR("stop profiling");
 		return;
 	}
+
 	this->state_ = thread_state::BREAKPOINT;
 	this->bp_addr_ = addr;
 
@@ -38,7 +39,6 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr) {
 		ERROR("no left breakpoint");
 	}
 
-	// signal(SIGIO, SIG_DFL);
 	struct f_owner_ex owner;
 	owner.type = F_OWNER_TID;
 	owner.pid = tid_;
@@ -80,10 +80,11 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr) {
 }
 
 void ThreadContext::open_perf_sampling_event() {
-	if (start_flag == false) {
-		DEBUG("stop profiling");
+	if (state_ != thread_state::INIT) {
+		ERROR("stop profiling");
 		return;
 	}
+
 	errno = 0;
 	this->state_ = thread_state::SAMPLING;
 
@@ -91,7 +92,7 @@ void ThreadContext::open_perf_sampling_event() {
 	 * precondition: open_perf_sampling_event should be called only once
 	 */
 	if (this->sampling_fd_ != -1) {
-		WARNING("open_perf_sampling_event is called multiple times %d", tid_); // signal siganl
+		WARNING("open_perf_sampling_event is called multiple times %d", tid_);
 		return;
 	}
 
@@ -99,9 +100,8 @@ void ThreadContext::open_perf_sampling_event() {
 	memset(&pe, 0, sizeof(struct perf_event_attr));
 	pe.size = sizeof(struct perf_event_attr);
 	pe.type = PERF_TYPE_HARDWARE;
-	// pe.config = PERF_COUNT_HW_BRANCH_INSTRUCTIONS;
 	pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-	pe.sample_period = 1000 * 5;
+	pe.sample_period = 10000 * 5;
 	pe.disabled = 1;
 	pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
 	pe.sample_type = PERF_SAMPLE_IP;
@@ -181,4 +181,25 @@ void ThreadContext::stack_lbr_entry_reset() {
 
 void ThreadContext::add_to_stack_lbr_entry() {
 	thread_stack_lbr_entry_.add_branch(cur_branch_.from_addr, cur_branch_.to_addr);
+}
+
+void print_backtrace() {
+	unw_cursor_t cursor;
+	unw_context_t context;
+
+	unw_getcontext(&context);
+	unw_init_local(&cursor, &context);
+
+	while (unw_step(&cursor) > 0) {
+		unw_word_t offset, pc;
+		char symbol[512];
+
+		unw_get_reg(&cursor, UNW_REG_IP, &pc);
+
+		if (unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset) == 0) {
+			INFO("[%lx] %s + 0x%lx\n", (unsigned long)pc, symbol, (unsigned long)offset);
+		} else {
+			INFO("[%lx] <unknown>\n", (unsigned long)pc);
+		}
+	}
 }

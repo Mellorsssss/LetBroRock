@@ -33,18 +33,19 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
 	if (logFd == -1) {
 		initLogFile();
 	}
-	// add timestamp for debugging
-	auto now = std::chrono::system_clock::now();
-	std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-	auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-	std::tm now_tm = *std::localtime(&now_time_t);
+    
+    // clock_gettime is async signal safe
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    struct tm now_tm;
+    localtime_r(&ts.tv_sec, &now_tm);
 
-	char buffer[BUFFER_SIZE];
-	int offset = offset =
-	    snprintf(buffer, BUFFER_SIZE, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] ", now_tm.tm_year + 1900, now_tm.tm_mon + 1,
-	             now_tm.tm_mday, now_tm.tm_hour, now_tm.tm_min, now_tm.tm_sec, (int)milliseconds.count());
+    char buffer[BUFFER_SIZE];
+    int offset = snprintf(buffer, BUFFER_SIZE, "[%04d-%02d-%02d %02d:%02d:%02d.%03ld] ",
+                          now_tm.tm_year + 1900, now_tm.tm_mon + 1, now_tm.tm_mday,
+                          now_tm.tm_hour, now_tm.tm_min, now_tm.tm_sec, ts.tv_nsec / 1000000);
 
-	offset += snprintf(buffer + offset, BUFFER_SIZE - offset, "[%s:%d] %s:", file, line, levelStr[level]);
+    offset += snprintf(buffer + offset, BUFFER_SIZE - offset, "[%s:%d] %s:", file, line, levelStr[level]);
 
 	va_list args;
 	va_start(args, format);

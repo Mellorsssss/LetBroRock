@@ -9,10 +9,11 @@ int foo(int v) {
 }
 
 int main() {
-	for (int i = 0; i < 100000; i++) {
-		int tem = 0;
-		tem = foo(i);
-		DO_NOT_OPTIMIZE(tem);
-	}
+	for (int j = 0; j < 1000; j++)
+		for (long long i = 0; i < 1000000000; i++) {
+			int tem = 0;
+			tem = foo(i);
+			DO_NOT_OPTIMIZE(tem);
+		}
 	return 0;
 }

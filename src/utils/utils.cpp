@@ -50,7 +50,7 @@ bool find_next_branch(ThreadContext &tcontext, uint64_t pc, int length) {
 
 	amed_insn insn;
 
-	// TODO: partial decoding instructions non-branch instructions
+	// TODO(performance): partial decoding instructions non-branch instructions
 	while (amed_decode_insn(pcontext, &insn)) {
 		uint64_t temp_pc = (uint64_t)(pcontext->address);
 		DEBUG("current pc: %lx", temp_pc);
@@ -247,8 +247,6 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
 		DEBUG("static_evaluate: try to decode the instruction");
 		if (decode(tcontext.get_dr_context(), (byte *)pc, d_insn) == nullptr) {
 			ERROR("fail to decode the instruction using dynamorio");
-		} else {
-			DEBUG("static_evaluate: succeed to decode the instruction using dynamorio");
 		}
 
 		opnd_t target_op = instr_get_target(d_insn);
@@ -308,9 +306,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 
 	if (decode(dr_context, addr, d_insn) == nullptr) {
 		ERROR("fail to decode the instruction using dynamorio");
-	} else {
-		// instr_disassemble(dr_context, &d_insn, STDOUT);
-		DEBUG("\nsucceed to decode the instruction using dynamorio");
 	}
 
 	// judge what kind of the instruction is
@@ -488,9 +483,6 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, 
 
 	if (decode(dr_context, addr, &d_insn) == nullptr) {
 		ERROR("fail to decode the instruction using dynamorio");
-	} else {
-		// instr_disassemble(dr_context, &d_insn, STDOUT);
-		DEBUG("\nsucceed to decode the instruction using dynamorio");
 	}
 
 	// judge what kind of the instruction is
@@ -603,28 +595,6 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, 
 #else
 	return std::make_pair(UNKNOWN_ADDR, false);
 #endif
-}
-
-void print_backtrace() {
-	return;
-	unw_cursor_t cursor;
-	unw_context_t context;
-
-	unw_getcontext(&context);
-	unw_init_local(&cursor, &context);
-
-	while (unw_step(&cursor) > 0) {
-		unw_word_t offset, pc;
-		char symbol[512];
-
-		unw_get_reg(&cursor, UNW_REG_IP, &pc);
-
-		if (unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset) == 0) {
-			WARNING("[%lx] %s + 0x%lx\n", (unsigned long)pc, symbol, (unsigned long)offset);
-		} else {
-			WARNING("[%lx] <unknown>\n", (unsigned long)pc);
-		}
-	}
 }
 
 int tgkill(pid_t group_id, pid_t tid, int signo) {
