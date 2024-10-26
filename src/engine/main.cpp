@@ -34,6 +34,8 @@ constexpr int MAX_THREAD_NUM = 500;
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND   (SIGBEGIN + 1)
 
+#define unlikely(x) __builtin_expect((x), 0)
+
 thread_local ThreadContext *thread_local_context_ = nullptr;
 ThreadContext thread_context[MAX_THREAD_NUM];
 ExecutableSegments *executable_segments = nullptr;
@@ -123,7 +125,9 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
-	thread_local_context_->handler_num_add();
+	if (thread_context->is_stop()) return;
+
+	thread_local_context_->handler_num_inc();
 	allow_deferred();
 	defer([&](){
 		// early stop the current tracing
@@ -218,9 +222,14 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	// cache the tid to prevent syscall every time
+	// to prevent sampling event hit the profiler code, disable it quickly
+	if (unlikely(thread_local_context_ == nullptr) && ioctl(info->si_fd, PERF_EVENT_IOC_DISABLE, 0) != 0) {
+		ERROR("ioctl(PERF_EVENT_IOC_DISABLE)");
+		WARNING("fail to disable perf sampling event");
+	}
 	static thread_local pid_t tid = syscall(SYS_gettid);
 
-	if (thread_local_context_ == nullptr) {
+	if (unlikely(thread_local_context_ == nullptr)) {
 		for (int i = 0; i < MAX_THREAD_NUM; i++) {
 			if (thread_context[i].get_tid() == tid) {
 				INFO("%d get thread local context", tid);
@@ -235,10 +244,10 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		}
 	}
 	
-	// REMOVE ME: I don't think this is a good design
-	thread_local_context_->handler_num_add();
-	thread_local_context_->disable_perf_sampling_event();
+	if (thread_context->is_stop()) return;
 
+	thread_local_context_->handler_num_inc();
+	thread_local_context_->disable_perf_sampling_event();
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	uint64_t pc = get_pc(uc);
 
@@ -296,6 +305,8 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 }
 
 std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
+	// halt for second to wait for application bootstrap
+	// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	TimerGuard timer_guard("start profiler");
 	std::vector<pid_t> tids = get_tids(pid, std::vector<pid_t> {tid}, MAX_THREAD_NUM);
 
@@ -349,8 +360,7 @@ void profiler_main_thread() {
 		buffer_manager->init();
 		auto tids = start_profiler(pid, tid);
 		// REMOVE ME: for debug, make the profile longer
-		std::this_thread::sleep_for(std::chrono::milliseconds(200 * 1000));
-		// std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		INFO("restart the profiler");
 		stop_profiler(pid, tids);
 		buffer_manager->destroy();

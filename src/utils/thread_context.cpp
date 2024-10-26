@@ -184,6 +184,7 @@ void ThreadContext::add_to_stack_lbr_entry() {
 }
 
 void print_backtrace() {
+	return;
 	unw_cursor_t cursor;
 	unw_context_t context;
 

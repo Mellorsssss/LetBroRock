@@ -42,7 +42,7 @@ private:
 	std::map<uintptr_t, uintptr_t> segment_map;
 
 	bool isProfiler(std::string pathname) {
-		return pathname.find(".so") != std::string::npos || pathname.find("vdso") != std::string::npos || pathname.find("vsyscall") != std::string::npos ||
+		return /*pathname.find(".so") != std::string::npos || */ pathname.find("vdso") != std::string::npos || pathname.find("vsyscall") != std::string::npos ||
 		       pathname.find("profiler") != std::string::npos || pathname.find("unwind") != std::string::npos ||
 		       pathname.find("libdynamorio") != std::string::npos;
 	}

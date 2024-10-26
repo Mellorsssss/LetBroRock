@@ -52,6 +52,7 @@ public:
 	}
 
 	~ThreadContext() {
+		state_ = CLOSED;
 		WARNING("destruct a ThreadContext");
 		print_backtrace();
 		thread_context_destroy();
@@ -70,6 +71,10 @@ public:
 
 		thread_stack_lbr_entry_.reset();
 		reset_branch();
+
+		branch_dyn_cnt_ = 0;
+		branch_static_cnt_ = 0;
+		drop_cnt_ = 0;
 	}
 
 	void thread_context_destroy() {
@@ -86,6 +91,12 @@ public:
 		state_ = CLOSED;
 		close_perf_sampling_event();
 		close_perf_breakpoint_event();
+		
+		state_ =  CLOSED;	
+	}
+	
+	bool is_stop() const {
+		return state_.load() == CLOSED;
 	}
 
 	void destroy() {
@@ -93,7 +104,7 @@ public:
 			WARNING("destroy the ThreadContext of thread %d", tid_);
 
 		if (thread_buffer_ != nullptr && buffer_manager_ != nullptr) {
-			INFO("thread %d return the diry buffer", this->tid_);
+			INFO("thread %d return the dirty buffer", this->tid_);
 			buffer_manager_->put(thread_buffer_);
 		}
 		reset_entry();
@@ -160,10 +171,8 @@ public:
 	}
 
 	void open_perf_sampling_event();
-	// std::mutex& get_lock(){
-	//   return mutex_;
-	// }
-	void handler_num_add() {
+
+	void handler_num_inc() {
 		handler_num++;
 	}
 	void handler_num_dec() {
@@ -172,6 +181,7 @@ public:
 	int get_handler_num() {
 		return handler_num.load();
 	}
+
 	void enable_perf_sampling_event() {
 		state_ = thread_state::SAMPLING;
 
@@ -310,7 +320,7 @@ private:
 		CLOSED,
 		INIT,
 	} thread_state;
-	thread_state state_ {thread_state::CLOSED};
+	std::atomic<thread_state> state_ {thread_state::CLOSED};
 
 	/* decoding related */
 	void *thread_dr_context_ {nullptr};

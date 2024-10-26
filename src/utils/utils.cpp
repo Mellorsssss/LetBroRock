@@ -123,9 +123,9 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
 std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t> &exclue_targets, int max_size) {
 	std::vector<pid_t> tids;
 	std::unordered_set<pid_t> tids_set;
+	char path[256]{};
 	while (true) {
 		std::string path_cpp = "/proc/" + std::to_string(target_pid) + "/task";
-		char *path = new char[path_cpp.length() + 1];
 		strcpy(path, path_cpp.c_str());
 
 		struct dirent *entry;
@@ -153,9 +153,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t> &exclue_t
 		}
 		closedir(dir);
 		if (!has_new_tid && tids.size() > 0)
-			// if (tids.size() > 0)
 			break;
-		delete[] path;
 	}
 
 	std::string log_str = "get_tids: Find tids:";

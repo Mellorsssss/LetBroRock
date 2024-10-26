@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")
 
 add_definitions(-D LOG_LEVEL=LOG_DEBUG)
 # add_definitions( -D MY_ERROR)
+add_definitions(-D DEBUG_PRINT)
 # add_definitions( -D NO_STATIC)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
