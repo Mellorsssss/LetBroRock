@@ -3,6 +3,7 @@
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 #include <string.h>
+#include <ucontext.h>
 
 class ThreadUnwind {
 public:
@@ -46,12 +47,9 @@ private:
 	inline void extract_from_context(void *sigcontext) {
 		unw_tdep_context_t *context = reinterpret_cast<unw_tdep_context_t *>(&context_);
 #if defined(__aarch64__)
-#include <sys/ucontext.h>
 		const ucontext_t *uc = reinterpret_cast<const ucontext_t *>(sigcontext);
 		memcpy(context, uc, sizeof(ucontext_t));
 #elif defined(__x86_64__)
-#include <sys/ucontext.h>
-		typedef struct ucontext ucontext_t;
 		const ucontext_t *uc = (const ucontext_t *)sigcontext;
 		context->uc_mcontext.gregs[REG_RBP] = uc->uc_mcontext.gregs[REG_RBP];
 		context->uc_mcontext.gregs[REG_RSP] = uc->uc_mcontext.gregs[REG_RSP];

@@ -4,8 +4,10 @@
 #include "executable_segments.h"
 #include "utils.h"
 
+
 #include <atomic>
-#include <bits/siginfo.h>
+#include <bits/siginfo-arch.h>
+#include <bits/siginfo-consts.h>
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
