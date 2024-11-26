@@ -56,6 +56,6 @@ void logMessage(LogLevel level, const char *file, int line, const char *format, 
 	write(logFd, buffer, strlen(buffer));
 	void(fsync(logFd));
 	if (level == LOG_ERROR) {
-		// exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 }
