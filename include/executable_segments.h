@@ -46,6 +46,7 @@ private:
 		       pathname.find("profiler") != std::string::npos || pathname.find("unwind") != std::string::npos ||
 		       pathname.find("libdynamorio") != std::string::npos;
 	}
+
 	void parseProcMaps(bool exclude_shared_lib) {
 		std::ifstream mapsFile("/proc/self/maps");
 		if (!mapsFile.is_open()) {
@@ -56,6 +57,19 @@ private:
 		std::string line;
 		char permissions[5]; // e.g., "r-xp"
 		char path[256] = {0};
+		
+		// for debugging, dump all the segments in the file
+		std::ofstream outFile("exec_segments.out");
+		if (!outFile.is_open()) {
+			ERROR("Failed to open exec_segments.out");
+			return;
+		}
+
+		std::string mapContent((std::istreambuf_iterator<char>(mapsFile)), std::istreambuf_iterator<char>());
+		outFile << mapContent;
+		mapsFile.clear();
+		mapsFile.seekg(0);
+
 		while (std::getline(mapsFile, line)) {
 			uintptr_t seg_start, seg_end;
 			std::string permissions, offset, dev, inode, pathname;
@@ -65,28 +79,15 @@ private:
 			lineStream.ignore(1, '-');
 			lineStream >> std::hex >> seg_end;
 			lineStream >> permissions >> offset >> dev >> inode;
-			ERROR("find new executable segment: %#lx-%#lx %s", seg_start, seg_end, pathname.c_str());
 			if (permissions.find('x') == std::string::npos) {
 				continue;
 			}
 
-			if (lineStream >> pathname) {
-#ifdef DEBUG_PRINT
-				printf("%s is executable\n", pathname.c_str());
-#endif
-			}
-
-#ifdef DEBUG_PRINT
-			printf("find new executable segment: %#lx-%#lx %s\n", seg_start, seg_end, pathname.c_str());
-#endif
-
+			lineStream >> pathname;
 			if ((exclude_shared_lib) && isProfiler(pathname)) {
 				continue;
 			}
-			printf("add new executable segment: %#lx-%#lx %s\n", seg_start, seg_end, pathname.c_str());
 			segment_map[seg_start] = seg_end;
-
-			DEBUG("new executable segment: %#lx-%#lx %s", seg_start, seg_end, pathname.c_str());
 		}
 	}
 };
