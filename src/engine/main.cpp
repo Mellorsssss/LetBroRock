@@ -127,13 +127,14 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
+	TimerGuard guard("breakpoint handler" + std::to_string(info->si_fd));
 	if (thread_context->is_stop()) return;
 
 	thread_local_context_->handler_num_inc();
 	allow_deferred();
 	defer([&](){
 		// early stop the current tracing
-		thread_local_context_->close_perf_breakpoint_event();
+		thread_local_context_->disable_perf_breakpoint_event();
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 	});
@@ -213,16 +214,18 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 
 	cancel_deferred();
 
-	thread_local_context_->close_perf_breakpoint_event();
 	if (ok) {
-		thread_local_context_->open_perf_breakpoint_event(next_from_addr);
+		// the breakpoint is already set, no need to set it again
+		thread_local_context_->change_perf_breakpoint_event(next_from_addr);
 	} else {
+		thread_local_context_->disable_perf_breakpoint_event();
 		thread_local_context_->enable_perf_sampling_event();
 	}
 	thread_local_context_->handler_num_dec();
 }
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
+	TimerGuard guard("sampling handle " + std::to_string(info->si_fd));
 	// cache the tid to prevent syscall every time
 	// to prevent sampling event hit the profiler code, disable it quickly
 	if (unlikely(thread_local_context_ == nullptr) && ioctl(info->si_fd, PERF_EVENT_IOC_DISABLE, 0) != 0) {
@@ -297,7 +300,8 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 
 	bool ok = find_next_unresolved_branch(*thread_local_context_, pc);
 	if (ok) {
-		thread_local_context_->open_perf_breakpoint_event(thread_local_context_->get_branch().from_addr);
+		thread_local_context_->change_perf_breakpoint_event(thread_local_context_->get_branch().from_addr);
+		thread_local_context_->enable_perf_breakpoint_event();
 	} else {
 		ERROR("fail to find a unresolved branch, it's werid");
 		thread_local_context_->enable_perf_sampling_event();
@@ -321,6 +325,7 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
 		thread_context[i].set_buffer_manager(buffer_manager);
 		thread_context[i].thread_start();
 		thread_context[i].open_perf_sampling_event();
+		thread_context[i].init_perf_breakpoint_event(); // use a 
 
 		INFO("main :%d and current %d start profiling", pid, tids[i]);
 	}
@@ -334,16 +339,18 @@ void stop_profiler(pid_t pid, std::vector<pid_t> &tids) {
 	TimerGuard timer_guard("stop profiler");
 
 	for (int i = 0; i < tids.size(); i++) {
-		ERROR("main :%d and current %d stop profiler", pid, tids[i]);
+		INFO("main :%d and current %d stop profiler", pid, tids[i]);
 		thread_context[i].thread_stop();
 		// wait handler over
 		while (thread_context[i].get_handler_num() != 0) //
 		{
+			// Yield CPU to other threads to avoid busy polling while waiting for handlers to complete
+			std::this_thread::yield();
 			DEBUG("current handler_nums is %d", thread_context[i].get_handler_num());
 		}
 		// destroy
 		thread_context[i].thread_context_destroy();
-		ERROR("main :%d and current %d stop profiler over", pid, tids[i]);
+		INFO("main :%d and current %d stop profiler over", pid, tids[i]);
 	}
 
 	// Attention: we must stop the writer thread explicitly
@@ -357,18 +364,20 @@ void stop_profiler(pid_t pid, std::vector<pid_t> &tids) {
 void profiler_main_thread() {
 	pid_t pid = getpid();
 	pid_t tid = syscall(SYS_gettid);
+	int restart_count = 0;
 
 	while (true) {
 		buffer_manager->init();
-		auto tids = start_profiler(pid, tid);
-		// REMOVE ME: for debug, make the profile longer
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-		INFO("restart the profiler");
+		auto tids = start_profiler(pid, tid);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		INFO("restart the profiler %d times", restart_count++);
 		stop_profiler(pid, tids);
 		buffer_manager->destroy();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 
+	// the following code may cause the segment fault
 	delete buffer_manager;
 	return;
 }

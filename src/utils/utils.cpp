@@ -161,7 +161,7 @@ std::vector<pid_t> get_tids(pid_t target_pid, const std::vector<pid_t> &exclue_t
 		log_str += std::to_string(tid) + " ";
 	}
 
-	ERROR("%s", log_str.c_str());
+	INFO("%s", log_str.c_str());
 	return tids;
 }
 

@@ -91,8 +91,8 @@ public:
 		state_ = CLOSED;
 		close_perf_sampling_event();
 		close_perf_breakpoint_event();
-		
-		state_ =  CLOSED;	
+
+		state_ = CLOSED;
 	}
 	
 	bool is_stop() const {
@@ -208,6 +208,33 @@ public:
 			return;
 		}
 	}
+	
+	void enable_perf_breakpoint_event() {
+		state_ = thread_state::BREAKPOINT;
+
+		if (bp_fd_ == -1) {
+			WARNING("breakpoint event is closed.");
+			return;
+		}
+
+		if (ioctl(this->bp_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0) {
+			ERROR("PERF_EVENT_IOC_ENABLE");
+			ERROR("fail to enable perf breakpoint event");
+		}
+	}
+
+	void disable_perf_breakpoint_event() {
+		if (bp_fd_ == -1) {
+			WARNING("breakpoint event is closed.");
+			return;
+		}
+
+		if (ioctl(bp_fd_, PERF_EVENT_IOC_DISABLE, 0) != 0) {
+			ERROR("ioctl(PERF_EVENT_IOC_DISABLE)");
+			WARNING("fail to disable perf breakpoint event");
+			return;
+		}
+	}
 
 	void close_perf_sampling_event() {
 		if (sampling_fd_ == -1) {
@@ -228,7 +255,10 @@ public:
 		return;
 	}
 
-	void open_perf_breakpoint_event(uint64_t addr);
+	void init_perf_breakpoint_event();
+
+	// when tracing the different address, we need to change the breakpoint event without closing the old one
+	void change_perf_breakpoint_event(uint64_t addr);
 
 	// breakpoint event is created every time, so we don't have a 'disable_perf_breakpont_event'
 	void close_perf_breakpoint_event() {
@@ -315,7 +345,7 @@ private:
                                          └──────────────────┘     
 	 */
 	typedef enum _thread_state {
-		SAMPLING,
+		SAMPLING = 1, // to make & operation valid
 		BREAKPOINT,
 		CLOSED,
 		INIT,

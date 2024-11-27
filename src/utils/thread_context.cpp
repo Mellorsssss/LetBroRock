@@ -3,45 +3,34 @@
 #include <fcntl.h>
 #include <linux/hw_breakpoint.h>
 
-// void ERROR(const std::string &s) {
-//     // ERROR(s);
-// }
-
 uint64_t get_mmap_len() {
 	return sysconf(_SC_PAGESIZE) * (1 + RINGBUFFER_SIZE);
 }
 
-void ThreadContext::open_perf_breakpoint_event(uint64_t addr) {
-	if (state_ & (thread_state::CLOSED || thread_state::INIT)) {
-		ERROR("stop profiling");
-		return;
-	}
-
-	this->state_ = thread_state::BREAKPOINT;
-	this->bp_addr_ = addr;
-
+void ThreadContext::init_perf_breakpoint_event() {
+	// init the file descriptor for breakpoint event
 	struct perf_event_attr pe;
 	memset(&pe, 0, sizeof(struct perf_event_attr));
 	pe.type = PERF_TYPE_BREAKPOINT;
 	pe.size = sizeof(struct perf_event_attr);
 	pe.config = 0;
 	pe.bp_type = HW_BREAKPOINT_X;
-	pe.bp_addr = (uintptr_t)(addr);
+	pe.bp_addr = (uintptr_t)(0); // use a dummy address
 	pe.bp_len = 8;
 	pe.sample_period = 1; // make sure every breakpoint will cause a overflow
 	pe.disabled = 1;
 	pe.exclude_kernel = 1;
-
 	assert(this->bp_fd_ == -1 && "previous breakpoint events must be closed");
-	DEBUG("enter the set breakpoint, errno is %d", errno);
+
 	if ((this->bp_fd_ = syscall(__NR_perf_event_open, &pe, tid_, -1, -1, 0)) < 0) {
 		ERROR("perf_event_open");
 		ERROR("no left breakpoint");
 	}
 
-	struct f_owner_ex owner;
-	owner.type = F_OWNER_TID;
-	owner.pid = tid_;
+	struct f_owner_ex owner = {
+		.type = F_OWNER_TID,
+		.pid = tid_
+	};
 
 	if (fcntl(this->bp_fd_, F_SETOWN_EX, &owner) == -1) {
 		ERROR("F_SETSIG bp fd is %d tid is %d", this->bp_fd_.load(), tid_); // error tid is -1 bp is -1
@@ -66,17 +55,42 @@ void ThreadContext::open_perf_breakpoint_event(uint64_t addr) {
 		exit(EXIT_FAILURE);
 	}
 
-	DEBUG("%d successfully set breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
+	INFO("%d successfully init breakpoint with fd: %d", tid_, bp_fd_.load());
 	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0) {
 		ERROR("reset failure %d", tid_);
 		ERROR("PERF_EVENT_IOC_RESET");
 		return;
 	}
+}
 
-	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0) {
-		ERROR("PERF_EVENT_IOC_ENABLE");
+void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
+	if (!(state_ & (thread_state::BREAKPOINT | thread_state::SAMPLING))) {
+		INFO("stop profiling with state %d", state_.load());
 		return;
 	}
+
+	this->state_ = thread_state::BREAKPOINT;
+	this->bp_addr_ = addr;
+
+	struct perf_event_attr pe;
+	memset(&pe, 0, sizeof(struct perf_event_attr));
+	pe.type = PERF_TYPE_BREAKPOINT;
+	pe.size = sizeof(struct perf_event_attr);
+	pe.config = 0;
+	pe.bp_type = HW_BREAKPOINT_X;
+	pe.bp_addr = (uintptr_t)(addr);
+	pe.bp_len = 8;
+	pe.sample_period = 1; // make sure every breakpoint will cause a overflow
+	pe.disabled = 0;
+	pe.exclude_kernel = 1;	
+	
+	// directly update the breakpoint attributes
+	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_MODIFY_ATTRIBUTES, &pe) != 0) {
+		WARNING("PERF_EVENT_IOC_MODIFY_ATTRIBUTES fails");
+		return;
+	}
+
+	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
 }
 
 void ThreadContext::open_perf_sampling_event() {
@@ -101,7 +115,7 @@ void ThreadContext::open_perf_sampling_event() {
 	pe.size = sizeof(struct perf_event_attr);
 	pe.type = PERF_TYPE_HARDWARE;
 	pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-	pe.sample_period = 10000 * 5;
+	pe.sample_period = 1000000 * 5;
 	pe.disabled = 1;
 	pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
 	pe.sample_type = PERF_SAMPLE_IP;
@@ -110,8 +124,8 @@ void ThreadContext::open_perf_sampling_event() {
 
 	this->sampling_fd_ = syscall(__NR_perf_event_open, &pe, tid_, -1, -1, 0);
 	if (this->sampling_fd_ < 0) {
-		WARNING("the perf_fd is %d", this->sampling_fd_.load());
-		ERROR("here :perf_event_open");
+		ERROR("the perf_fd is %d %d", this->sampling_fd_.load(), errno);
+		perror("perf event open");
 		return;
 	}
 
@@ -147,7 +161,6 @@ void ThreadContext::open_perf_sampling_event() {
 		exit(EXIT_FAILURE);
 	}
 
-	WARNING("exit perf_events open with errno %d", errno);
 	if (errno) {
 		ERROR("fail in perf_events enable");
 	}
