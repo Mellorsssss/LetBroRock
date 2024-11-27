@@ -147,56 +147,37 @@ public:
 		return cap_ - (cur_ - buffer_);
 	}
 
-	// void output(std::ostream &os)
-	// {
-	//   uint8_t *current = buffer_;
-	//   while (current < cur_)
-	//   {
-	//     // Read stack_sz_
-	//     uint8_t stack_sz = *current;
-	//     current += sizeof(stack_sz);
-
-	//     // Read stack_ array and output each element on a new line
-	//     uint64_t *stack = reinterpret_cast<uint64_t *>(current);
-	//     for (uint8_t i = 0; i < stack_sz; ++i)
-	//     {
-	//       os << std::hex << std::showbase << stack[i] << std::endl;
-	//     }
-	//     current += stack_sz * sizeof(uint64_t);
-
-	//     // Read branch_sz_
-	//     uint8_t branch_sz = *current;
-	//     current += sizeof(branch_sz);
-
-	//     // Read branch_ array and output each pair in the given format
-	//     // Output the branch trace in reverse order to be compatible with output of perf
-	//     // TODO: output all the branch trace in one line
-	//     uint64_t *branch = reinterpret_cast<uint64_t *>(current);
-	//     for (int i = branch_sz - 1; i >= 0; --i)
-	//     {
-	//       os << std::hex << std::showbase << branch[i * 2] << "/" << branch[i * 2 + 1] << "/-/-/-/1" << std::endl;
-	//     }
-	//     os << std::endl;
-	//     current += branch_sz * 2 * sizeof(uint64_t);
-	//   }
-	// }
 	void output(int fd) {
+		static int output_cnt = 0;
+		output_cnt++;
 		uint8_t *current = buffer_;
-		char output_buffer[1024]; // temporary buffer for formatted output
-		ERROR("current fd is %d", fd);
+		constexpr int output_buffer_size = 1024 * 1024; // 1MB
+		char output_buffer[output_buffer_size]; // temporary buffer for formatted output
+		uint64_t output_buffer_pos = 0;
 		if (fd == -1) {
 			ERROR("reopen fd is %d", fd);
+			return;
 		}
+		if (output_cnt % 100 == 0) {
+			int cnt_fd = open("dump_cnt.out", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (cnt_fd != -1) {
+				char cnt_buffer[32];
+				int len = snprintf(cnt_buffer, sizeof(cnt_buffer), "Count: %d\n", output_cnt);
+				write(cnt_fd, cnt_buffer, len);
+				close(cnt_fd);
+			}
+		}
+
 		while (current < cur_) {
 			// Read stack_sz_
 			uint8_t stack_sz = *current;
 			current += sizeof(stack_sz);
 
-			// Read stack_ array and output each element on a new line
+			// Read stack_ array and format each element
 			uint64_t *stack = reinterpret_cast<uint64_t *>(current);
 			for (uint8_t i = 0; i < stack_sz; ++i) {
-				std::snprintf(output_buffer, sizeof(output_buffer), "\t    %llx\n", stack[i]);
-				write(fd, output_buffer, std::strlen(output_buffer));
+				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, "\t    %llx\n", stack[i]);
+				// write(fd, output_buffer, std::strlen(output_buffer));
 			}
 			current += stack_sz * sizeof(uint64_t);
 
@@ -204,21 +185,29 @@ public:
 			uint8_t branch_sz = *current;
 			current += sizeof(branch_sz);
 
-			// Read branch_ array and output each pair in the given format
-			// Output the branch trace in reverse order to be compatible with output of perf
+			// Read branch_ array
 			uint64_t *branch = reinterpret_cast<uint64_t *>(current);
 
 			// blank space before the first lbr sample
-			write(fd, " ", 1);
+			output_buffer[output_buffer_pos++] = ' ';
 			for (int i = branch_sz - 1; i >= 0; --i) {
-				std::snprintf(output_buffer, sizeof(output_buffer), "%#llx/%#llx/-/-/-/1  ", branch[i * 2],
+				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, "%#llx/%#llx/-/-/-/1  ", branch[i * 2],
 				              branch[i * 2 + 1]);
-				write(fd, output_buffer, std::strlen(output_buffer));
+				// write(fd, output_buffer, std::strlen(output_buffer));
 			}
-			write(fd, "\n\n", 2); // add a newline between different entries
+			// write(fd, "\n\n", 2); // add a newline between different entries
+			output_buffer[output_buffer_pos++] = '\n';
+			output_buffer[output_buffer_pos++] = '\n';
 			current += branch_sz * 2 * sizeof(uint64_t);
 		}
-		void(fsync(fd));
+
+		if (output_buffer_pos >= output_buffer_size) {
+			ERROR("output buffer is too small");
+			return;
+		}
+
+		write(fd, output_buffer, output_buffer_pos);
+		// fsync(fd);
 	}
 
 private:
