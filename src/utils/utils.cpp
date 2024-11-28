@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <unordered_set>
+#include <dr_defines.h>
 
 #define X86
 
@@ -49,11 +50,15 @@ bool find_next_branch(ThreadContext &tcontext, uint64_t pc, int length) {
 	amed_context *pcontext = &context;
 
 	amed_insn insn;
-
+	amed_formatter formatter = { 0 };
+	formatter.lower_case = true;
+	char buffer[256] = {};
 	// TODO(performance): partial decoding instructions non-branch instructions
 	while (amed_decode_insn(pcontext, &insn)) {
 		uint64_t temp_pc = (uint64_t)(pcontext->address);
 		DEBUG("current pc: %lx", temp_pc);
+		amed_print_insn(buffer, pcontext, &insn, &formatter);
+		DEBUG("instruction: %s", buffer);
 
 		pcontext->address += insn.length;
 		pcontext->length -= insn.length;
@@ -305,6 +310,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 	if (decode(dr_context, addr, d_insn) == nullptr) {
 		ERROR("fail to decode the instruction using dynamorio");
 	}
+	// dr_print_instr(dr_context, STDOUT, d_insn, "DR-instrcution: ");
 
 	// judge what kind of the instruction is
 	if (AMED_CATEGORY_BRANCH == insn.categories[1]) {
@@ -326,11 +332,14 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 		DEBUG("evaluate_x86: is pc");
 	} else if (opnd_is_reg(target_op)) {
 		DEBUG("evaluate_x86: is reg");
+	} else {
+		ERROR("evaluate_x86: unknown opnd kind");
 	}
 
-	// dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
+	// dr_print_opnd(dr_context, STDOUT, target_op, "DR-opnd: ");
 
 	if (opnd_is_immed(target_op)) {
+		/* it seems that this branch is useless */
 		if (opnd_is_immed_int(target_op)) {
 			target_addr = opnd_get_immed_int(target_op);
 		} else {
@@ -340,6 +349,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 		target_address = opnd_get_pc(target_op); // TODO: is this always offset?
 		if (target_address == nullptr) {
 			ERROR("fail to compute the address of operand");
+			return {UNKNOWN_ADDR, false}; // 应该返回错误值而不是继续执行
 		}
 		target_addr = (uint64_t)(target_address);
 	} else if (opnd_is_reg(target_op)) {
@@ -348,14 +358,17 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 		if (!instr_is_return(d_insn)) {
 			target_addr += insn.length;
 		} else {
+			INFO("the target address of the operand is %#lx(derefed from %#lx)", *(uint64_t *)(target_addr), target_addr);
 			target_addr = *((uint64_t *)target_addr);
 		}
 	} else {
-		target_address = opnd_compute_address(target_op, &mcontext);
-		if (target_address == nullptr) {
+		app_pc temp_addr = opnd_compute_address(target_op, &mcontext);
+		if (temp_addr == nullptr) {
 			ERROR("fail to compute the address of operand");
 		}
-		target_addr = (uint64_t)(target_address);
+		// Dereference temp_addr to get the actual target address stored at that memory location
+		target_addr = *(uint64_t*)(temp_addr);
+		DEBUG("the target address of the operand is %#lx(derefed from %#lx)", target_addr, temp_addr);
 	}
 
 	if (target_addr == UNKNOWN_ADDR) {

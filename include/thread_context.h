@@ -53,8 +53,6 @@ public:
 
 	~ThreadContext() {
 		state_ = CLOSED;
-		WARNING("destruct a ThreadContext");
-		print_backtrace();
 		thread_context_destroy();
 	}
 
