@@ -56,11 +56,6 @@ void ThreadContext::init_perf_breakpoint_event() {
 	}
 
 	INFO("%d successfully init breakpoint with fd: %d", tid_, bp_fd_.load());
-	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0) {
-		ERROR("reset failure %d", tid_);
-		ERROR("PERF_EVENT_IOC_RESET");
-		return;
-	}
 }
 
 void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
@@ -84,9 +79,10 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 	pe.disabled = 1;
 	pe.exclude_kernel = 1;	
 	
+	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
 	// directly update the breakpoint attributes
 	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_MODIFY_ATTRIBUTES, &pe) != 0) {
-		WARNING("PERF_EVENT_IOC_MODIFY_ATTRIBUTES fails");
+		WARNING("PERF_EVENT_IOC_MODIFY_ATTRIBUTES fails %d", errno);
 		return;
 	}
 
@@ -96,7 +92,6 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 		ERROR("PERF_EVENT_IOC_RESET");
 		return;
 	}
-	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
 }
 
 void ThreadContext::open_perf_sampling_event() {

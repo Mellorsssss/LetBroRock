@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <unordered_map>
 
-constexpr int MAX_THREAD_NUM = 500;
+constexpr int MAX_THREAD_NUM = 4;
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND   (SIGBEGIN + 1)
 
@@ -50,12 +50,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext);
 bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
 
 void signal_prehandle(sigset_t &old_set) {
+	// as the same signal will be blocked in the handler, we don't need to block it again
+	return;
     sigset_t new_set;
     sigfillset(&new_set);
     sigprocmask(SIG_SETMASK, &new_set, &old_set);
 }
 
 void signal_posthandle(sigset_t &old_set) {
+	return;
     sigprocmask(SIG_SETMASK, &old_set, nullptr);
 }
 
@@ -65,8 +68,8 @@ public:
 	}
 
 	~TimerGuard() {
-		auto end = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double, std::milli> elapsed = end - start_;
+		// auto end = std::chrono::high_resolution_clock::now();
+		// std::chrono::duration<double, std::milli> elapsed = end - start_;
 		// INFO("%s took %.2f ms", name_.c_str(), elapsed.count());
 	}
 
@@ -136,7 +139,6 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	// This avoids recursively hitting breakpoints in our own profiling code.
 	thread_local_context_->disable_perf_breakpoint_event();
-	TimerGuard guard("breakpoint handler" + std::to_string(info->si_fd));
 	if (thread_context->is_stop()) return;
 	
 	// Disable breakpoint events to prevent false triggers from libprofiler.so code execution.
@@ -147,15 +149,11 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	// race condition: the handler num is 0 and thread_context->is_stop() is true
 	thread_local_context_->handler_num_inc();
 	// double check, if the thread is stop, then just quit
-	allow_deferred();
-	defer([&](){
-		// early stop the current tracing
+
+	if (thread_context->is_stop()) {
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
-	});
-
-	if (thread_context->is_stop()) {
 		return;
 	}
 	assert(errno != EINTR && "breakpoint should not hit the syscall");
@@ -170,11 +168,17 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	 */
 	if (!thread_local_context_->is_breakpointing()) {
 		WARNING("breakpoint hit when the thread is not in breakpoint");
+		thread_local_context_->enable_perf_sampling_event();
+		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
 	if (thread_local_context_->get_breakpoint_fd() != info->si_fd) {
 		WARNING("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context_->get_breakpoint_fd());
+		thread_local_context_->enable_perf_sampling_event();
+		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
@@ -185,7 +189,6 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 		WARNING("pid %d real breakpoint %#lx(fd: %d) is different from setted breakpoint addr %#lx",
 		      thread_local_context_->get_tid(), pc, info->si_fd, bp_addr);
 		// continue with the previous breakpoint setting, so we need to cancel the deferred
-		cancel_deferred();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
 		thread_local_context_->enable_perf_breakpoint_event();
@@ -196,6 +199,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	    !executable_segments->isAddressInExecutableSegment(pc)) {
 		ERROR("pid %d with unmatched breakpoint address(%#lx vs %#lx)",
 		      thread_local_context_->get_tid(), bp_addr, thread_local_context_->get_branch().from_addr);
+		thread_local_context_->enable_perf_sampling_event();
+		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 	DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, thread_local_context_->get_tid());
@@ -229,6 +235,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 			thread_local_context_->get_entry()->set_stack_size(real_frame_size);
 			thread_local_context_->reset();
 			INFO("%d unwind %d stack frames", thread_local_context_->get_tid(), real_frame_size);
+			thread_local_context_->enable_perf_sampling_event();
+			thread_local_context_->handler_num_dec();
+			signal_posthandle(old_set);
 			return;
 		}
 	}
@@ -237,11 +246,12 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 
 	uint64_t next_from_addr = thread_local_context_->get_branch().from_addr;
 	if (!executable_segments->isAddressInExecutableSegment(next_from_addr)) {
-		ERROR("breakpoint handler triggered at un-executable pc %lx", next_from_addr);
+		WARNING("breakpoint handler triggered at un-executable pc %lx", next_from_addr);
+		thread_local_context_->enable_perf_sampling_event();
+		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
-
-	cancel_deferred();
 
 	if (ok) {
 		// the breakpoint is already set, no need to set it again
@@ -257,7 +267,6 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 }
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
-	TimerGuard guard("sampling handle " + std::to_string(info->si_fd));
 	sigset_t old_set;
 	signal_prehandle(old_set);
 	// cache the tid to prevent syscall every time
@@ -314,7 +323,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	 * 2. fd triggering event is sampling_fd_
 	 */
 	if (!thread_local_context_->is_sampling()) {
-		ERROR("thread %d redudant sampling handler(probably from previous fd:%d), just return",
+		WARNING("thread %d redudant sampling handler(probably from previous fd:%d), just return",
 		      tid, info->si_fd);
 		// TODO: why I commented the following line? Fuck.
 		// thread_local_context_->enable_perf_sampling_event();
@@ -338,7 +347,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	DEBUG("Sampling handler: the fd is %d, handled by %d", info->si_fd, tid);
 
 	if (!executable_segments->isAddressInExecutableSegment(pc)) {
-		ERROR("Sampling handler triggered at un-executable pc %lx", pc);
+		WARNING("Sampling handler triggered at un-executable pc %lx", pc);
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -386,8 +395,6 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
 }
 
 void stop_profiler(pid_t pid, std::vector<pid_t> &tids) {
-	TimerGuard timer_guard("stop profiler");
-
 	for (int i = 0; i < tids.size(); i++) {
 		INFO("main :%d and current %d stop profiler", pid, tids[i]);
 		thread_context[i].thread_stop();
@@ -418,13 +425,11 @@ void profiler_main_thread() {
 
 	while (true) {
 		buffer_manager->init();
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		auto tids = start_profiler(pid, tid);
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		INFO("restart the profiler %d times", restart_count++);
 		stop_profiler(pid, tids);
 		buffer_manager->destroy();
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 
 	// the following code may cause the segment fault

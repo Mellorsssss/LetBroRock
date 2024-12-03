@@ -276,24 +276,24 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
 			} else {
 				assert(0 && "direct control flow trasfer should only go to int address!");
 			}
-			WARNING("statically evaluated address from immed: %#lx", target_addr);
+			INFO("statically evaluated address from immed: %#lx", target_addr);
 		} else if (opnd_is_abs_addr(target_op)) {
 			target_addr = (uint64_t)opnd_compute_address(target_op, nullptr);
 			if (target_addr == 0) {
 				ERROR("fail to comput the addr");
 			}
-			WARNING("statically evaluated address from abs_addr: %#lx", target_addr);
+			INFO("statically evaluated address from abs_addr: %#lx", target_addr);
 		} else if (opnd_is_pc(target_op)) {
 			target_addr = (uint64_t)opnd_get_pc(target_op);
 			if (target_addr == 0) {
 				ERROR("fail to comput the addr");
 			}
-			// WARNING("statically evaluated address from pc: %#lx", target_addr);
+			INFO("statically evaluated address from pc: %#lx", target_addr);
 		} else {
 			DEBUG("static_evaluate: the target is not imm");
 		}
 
-		WARNING("taken branch: %#lx -> %#lx", pc, target_addr);
+		DEBUG("taken branch: %#lx -> %#lx", pc, target_addr);
 		return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? false : true);
 	} else {
 		return std::make_pair(UNKNOWN_ADDR, false);
@@ -514,7 +514,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 
 	// handle the cbr
 
-	// WARNING("dynamically evaluated address %#lx", target_addr);
 	if (taken) {
 		INFO("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
 	} else {
@@ -638,9 +637,9 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, 
 	// handle the cbr
 	instr_free(dr_context, &d_insn);
 
-	// WARNING("dynamically evaluated address %#lx", target_addr);
+	INFO("dynamically evaluated address %#lx", target_addr);
 	if (taken) {
-		WARNING("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
+		INFO("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
 	} else {
 		// since not taken, target addr will be the next instruction
 		target_addr = get_pc(ucontext) + insn.length;

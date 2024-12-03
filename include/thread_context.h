@@ -99,7 +99,7 @@ public:
 
 	void destroy() {
 		if (tid_)
-			WARNING("destroy the ThreadContext of thread %d", tid_);
+			INFO("destroy the ThreadContext of thread %d", tid_);
 
 		if (thread_buffer_ != nullptr && buffer_manager_ != nullptr) {
 			INFO("thread %d return the dirty buffer", this->tid_);
@@ -108,7 +108,7 @@ public:
 		reset_entry();
 		thread_buffer_ = nullptr;
 		if (tid_)
-			WARNING("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
+			INFO("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
 	}
 
 	void reset() {
@@ -189,8 +189,7 @@ public:
 		}
 
 		if (ioctl(this->sampling_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0) {
-			ERROR("PERF_EVENT_IOC_ENABLE");
-			ERROR("fail to enable perf sampling event");
+			WARNING("PERF_EVENT_IOC_ENABLE");
 		}
 	}
 
@@ -201,7 +200,7 @@ public:
 		}
 
 		if (ioctl(sampling_fd_, PERF_EVENT_IOC_DISABLE, 0) != 0) {
-			ERROR("ioctl(PERF_EVENT_IOC_DISABLE)");
+			WARNING("ioctl(PERF_EVENT_IOC_DISABLE)");
 			WARNING("fail to disable perf sampling event");
 			return;
 		}
@@ -229,7 +228,7 @@ public:
 		}
 
 		if (ioctl(bp_fd_, PERF_EVENT_IOC_DISABLE, 0) != 0) {
-			ERROR("ioctl(PERF_EVENT_IOC_DISABLE)");
+			WARNING("ioctl(PERF_EVENT_IOC_DISABLE)");
 			WARNING("fail to disable perf breakpoint event");
 			return;
 		}
@@ -275,7 +274,7 @@ public:
 			return;
 		}
 
-		WARNING("close perf bp event %d(fd: %d)", tid_, bp_fd_.load());
+		INFO("close perf bp event %d(fd: %d)", tid_, bp_fd_.load());
 		bp_fd_ = -1;
 		return;
 	}
