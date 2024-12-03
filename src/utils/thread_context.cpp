@@ -81,7 +81,7 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 	pe.bp_addr = (uintptr_t)(addr);
 	pe.bp_len = 8;
 	pe.sample_period = 1; // make sure every breakpoint will cause a overflow
-	pe.disabled = 0;
+	pe.disabled = 1;
 	pe.exclude_kernel = 1;	
 	
 	// directly update the breakpoint attributes
@@ -90,6 +90,12 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 		return;
 	}
 
+	// test to see if the following resetting is necessary
+	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0) {
+		ERROR("reset failure %d", tid_);
+		ERROR("PERF_EVENT_IOC_RESET");
+		return;
+	}
 	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
 }
 

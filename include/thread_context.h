@@ -216,8 +216,9 @@ public:
 		}
 
 		if (ioctl(this->bp_fd_, PERF_EVENT_IOC_ENABLE, 0) != 0) {
-			ERROR("PERF_EVENT_IOC_ENABLE");
-			ERROR("fail to enable perf breakpoint event");
+			// TODO: data race, the profiler thread may close the bp_fd_
+			WARNING("PERF_EVENT_IOC_ENABLE");
+			return;
 		}
 	}
 

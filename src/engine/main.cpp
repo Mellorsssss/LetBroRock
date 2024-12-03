@@ -49,9 +49,15 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext);
 
 bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
 
-void signal_prehandle(sigset_t &new_set, sigset_t &old_set);
+void signal_prehandle(sigset_t &old_set) {
+    sigset_t new_set;
+    sigfillset(&new_set);
+    sigprocmask(SIG_SETMASK, &new_set, &old_set);
+}
 
-void signal_posthandle(sigset_t &old_set);
+void signal_posthandle(sigset_t &old_set) {
+    sigprocmask(SIG_SETMASK, &old_set, nullptr);
+}
 
 class TimerGuard {
 public:
@@ -61,7 +67,7 @@ public:
 	~TimerGuard() {
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> elapsed = end - start_;
-		INFO("%s took %.2f ms", name_.c_str(), elapsed.count());
+		// INFO("%s took %.2f ms", name_.c_str(), elapsed.count());
 	}
 
 private:
@@ -85,7 +91,8 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 		// int length = executable_segments->getExecutableSegmentSize(pc);
 		bool found = find_next_branch(tcontext, pc, length);
 		if (!found) {
-			ERROR("Fail to find a branch until the end of the code from %#lx.", pc);
+			// in duckdb TPC-H benchmark, sometimes no branch is discovered
+			WARNING("Fail to find a branch until the end of the code from %#lx.", pc);
 			return false;
 		}
 
@@ -127,18 +134,30 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
+	// This avoids recursively hitting breakpoints in our own profiling code.
+	thread_local_context_->disable_perf_breakpoint_event();
 	TimerGuard guard("breakpoint handler" + std::to_string(info->si_fd));
 	if (thread_context->is_stop()) return;
+	
+	// Disable breakpoint events to prevent false triggers from libprofiler.so code execution.
+	sigset_t old_set;
+	signal_prehandle(old_set);
 
+	// prevent redundant breakpoint hit(e.g., double triggering the code in libc.so)
+	// race condition: the handler num is 0 and thread_context->is_stop() is true
 	thread_local_context_->handler_num_inc();
+	// double check, if the thread is stop, then just quit
 	allow_deferred();
 	defer([&](){
 		// early stop the current tracing
-		thread_local_context_->disable_perf_breakpoint_event();
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 	});
 
+	if (thread_context->is_stop()) {
+		return;
+	}
 	assert(errno != EINTR && "breakpoint should not hit the syscall");
 	assert(thread_local_context_->get_tid() == syscall(SYS_gettid) && "thread_local_context with wrong tid");
 
@@ -150,31 +169,41 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	 * 4. address triggering event must be br.from_addr
 	 */
 	if (!thread_local_context_->is_breakpointing()) {
-		ERROR("breakpoint hit when the thread is not in breakpoint");
+		WARNING("breakpoint hit when the thread is not in breakpoint");
 		return;
 	}
 
 	if (thread_local_context_->get_breakpoint_fd() != info->si_fd) {
-		ERROR("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context_->get_breakpoint_fd());
+		WARNING("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context_->get_breakpoint_fd());
 		return;
 	}
 
 	uint64_t bp_addr = thread_local_context_->get_breakpoint_addr();
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	uint64_t pc = get_pc(uc);
-	// ERROR:real breakpoint 0x55f234427372 is different from setted breakpoint addr 0x55f234427372 and the from addr is
-	// 0 ERROR:close and the bp_fd_ is 5 errno is 9 invoke after stop
-	if (pc != bp_addr || bp_addr != thread_local_context_->get_branch().from_addr ||
-	    !executable_segments->isAddressInExecutableSegment(pc)) {
-		ERROR("pid %d real breakpoint %#lx is different from setted breakpoint addr %#lx and the from addr is %#lx",
-		      thread_local_context_->get_tid(), pc, bp_addr, thread_local_context_->get_branch().from_addr);
+	if (pc != bp_addr) {
+		WARNING("pid %d real breakpoint %#lx(fd: %d) is different from setted breakpoint addr %#lx",
+		      thread_local_context_->get_tid(), pc, info->si_fd, bp_addr);
+		// continue with the previous breakpoint setting, so we need to cancel the deferred
+		cancel_deferred();
+		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
+		thread_local_context_->enable_perf_breakpoint_event();
 		return;
 	}
 
+	if (bp_addr != thread_local_context_->get_branch().from_addr ||
+	    !executable_segments->isAddressInExecutableSegment(pc)) {
+		ERROR("pid %d with unmatched breakpoint address(%#lx vs %#lx)",
+		      thread_local_context_->get_tid(), bp_addr, thread_local_context_->get_branch().from_addr);
+		return;
+	}
 	DEBUG("Breakpoint handler: the fd is %d handled by %d", info->si_fd, thread_local_context_->get_tid());
 	assert(thread_local_context_->get_tid() == syscall(SYS_gettid) &&
 	       "thread_local_context check tid before check_branch_if_taken");
-	int length = executable_segments->getExecutableSegmentSize(thread_local_context_->get_branch().from_addr);
+	// int length = executable_segments->getExecutableSegmentSize(thread_local_context_->get_branch().from_addr);
+	// is it possbile to always use the max length?
+	int length = INT_MAX;
 
 	// TODO: segment fault?
 	auto [target, taken] = check_branch_if_taken(*thread_local_context_, *uc, false, length);
@@ -218,14 +247,19 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 		// the breakpoint is already set, no need to set it again
 		thread_local_context_->change_perf_breakpoint_event(next_from_addr);
 	} else {
-		thread_local_context_->disable_perf_breakpoint_event();
 		thread_local_context_->enable_perf_sampling_event();
 	}
 	thread_local_context_->handler_num_dec();
+	signal_posthandle(old_set);
+	if (ok) {
+		thread_context->enable_perf_breakpoint_event();
+	}
 }
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	TimerGuard guard("sampling handle " + std::to_string(info->si_fd));
+	sigset_t old_set;
+	signal_prehandle(old_set);
 	// cache the tid to prevent syscall every time
 	// to prevent sampling event hit the profiler code, disable it quickly
 	if (unlikely(thread_local_context_ == nullptr) && ioctl(info->si_fd, PERF_EVENT_IOC_DISABLE, 0) != 0) {
@@ -245,13 +279,22 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		}
 		if (thread_local_context_ == nullptr) {
 			ERROR("%d no thread local context", tid);
+			signal_posthandle(old_set);
 			return;
 		}
 	}
 	
-	if (thread_context->is_stop()) return;
+	if (thread_context->is_stop()) {
+		signal_posthandle(old_set);
+		return;
+	}
 
 	thread_local_context_->handler_num_inc();
+	// double check, if the thread is stop, then just quit
+	if (thread_context->is_stop()) {
+		signal_posthandle(old_set);
+		return;
+	}
 	thread_local_context_->disable_perf_sampling_event();
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	uint64_t pc = get_pc(uc);
@@ -261,6 +304,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		      thread_local_context_->get_tid(), errno, info->si_fd, pc);
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
@@ -275,6 +319,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		// TODO: why I commented the following line? Fuck.
 		// thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
@@ -284,6 +329,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		      thread_local_context_->get_sampling_fd());
 		// thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
@@ -295,19 +341,23 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		ERROR("Sampling handler triggered at un-executable pc %lx", pc);
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
+		signal_posthandle(old_set);
 		return;
 	}
 
 	bool ok = find_next_unresolved_branch(*thread_local_context_, pc);
 	if (ok) {
 		thread_local_context_->change_perf_breakpoint_event(thread_local_context_->get_branch().from_addr);
-		thread_local_context_->enable_perf_breakpoint_event();
 	} else {
-		ERROR("fail to find a unresolved branch, it's werid");
+		WARNING("fail to find a unresolved branch, it's werid");
 		thread_local_context_->enable_perf_sampling_event();
 	}
 
 	thread_local_context_->handler_num_dec();
+	signal_posthandle(old_set);
+	if (ok) {
+		thread_local_context_->enable_perf_breakpoint_event();
+	}
 }
 
 std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
