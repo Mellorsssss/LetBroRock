@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <unordered_map>
 
-constexpr int MAX_THREAD_NUM = 4;
+constexpr int MAX_THREAD_NUM = 16;
 #define SIGBEGIN (SIGRTMIN + 1)
 #define SIGEND   (SIGBEGIN + 1)
 
@@ -51,14 +51,14 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
 
 void signal_prehandle(sigset_t &old_set) {
 	// as the same signal will be blocked in the handler, we don't need to block it again
-	return;
+	// return;
     sigset_t new_set;
     sigfillset(&new_set);
     sigprocmask(SIG_SETMASK, &new_set, &old_set);
 }
 
 void signal_posthandle(sigset_t &old_set) {
-	return;
+	// return;
     sigprocmask(SIG_SETMASK, &old_set, nullptr);
 }
 
@@ -139,18 +139,18 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	// This avoids recursively hitting breakpoints in our own profiling code.
 	thread_local_context_->disable_perf_breakpoint_event();
-	if (thread_context->is_stop()) return;
+	if (thread_local_context_->is_stop()) return;
 	
 	// Disable breakpoint events to prevent false triggers from libprofiler.so code execution.
 	sigset_t old_set;
 	signal_prehandle(old_set);
 
 	// prevent redundant breakpoint hit(e.g., double triggering the code in libc.so)
-	// race condition: the handler num is 0 and thread_context->is_stop() is true
+	// race condition: the handler num is 0 and thread_local_context_->is_stop() is true
 	thread_local_context_->handler_num_inc();
 	// double check, if the thread is stop, then just quit
 
-	if (thread_context->is_stop()) {
+	if (thread_local_context_->is_stop()) {
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -262,7 +262,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	thread_local_context_->handler_num_dec();
 	signal_posthandle(old_set);
 	if (ok) {
-		thread_context->enable_perf_breakpoint_event();
+		thread_local_context_->enable_perf_breakpoint_event();
 	}
 }
 
@@ -293,14 +293,14 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		}
 	}
 	
-	if (thread_context->is_stop()) {
+	if (thread_local_context_->is_stop()) {
 		signal_posthandle(old_set);
 		return;
 	}
 
 	thread_local_context_->handler_num_inc();
 	// double check, if the thread is stop, then just quit
-	if (thread_context->is_stop()) {
+	if (thread_local_context_->is_stop()) {
 		signal_posthandle(old_set);
 		return;
 	}
@@ -334,7 +334,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 
 	if (thread_local_context_->get_sampling_fd() != info->si_fd) {
 		// why hit wrong
-		ERROR("thread %d sampling hit with wrong fd:%d(expected %d)", thread_local_context_->get_tid(), info->si_fd,
+		WARNING("thread %d sampling hit with wrong fd:%d(expected %d)", thread_local_context_->get_tid(), info->si_fd,
 		      thread_local_context_->get_sampling_fd());
 		// thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
@@ -423,6 +423,7 @@ void profiler_main_thread() {
 	pid_t tid = syscall(SYS_gettid);
 	int restart_count = 0;
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	while (true) {
 		buffer_manager->init();
 		auto tids = start_profiler(pid, tid);

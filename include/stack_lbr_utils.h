@@ -134,6 +134,10 @@ public:
 		cur_ = nullptr;
 	}
 
+	void set_tid(int tid) {
+		tid_ = tid;
+	}
+
 	void reset() {
 		// it's unecessary to memset the memory
 		cur_ = buffer_;
@@ -147,9 +151,13 @@ public:
 		return cap_ - (cur_ - buffer_);
 	}
 
+	void set_enable_bolt(bool enable_bolt) {
+		enable_bolt_ = enable_bolt;
+	}
+
 	void output(int fd) {
 		static int output_cnt = 0;
-		output_cnt++;
+		output_cnt+= (cur_ - buffer_)/sizeof(uint8_t);
 		uint8_t *current = buffer_;
 		constexpr int output_buffer_size = 1024 * 1024; // 1MB
 		char output_buffer[output_buffer_size]; // temporary buffer for formatted output
@@ -175,9 +183,19 @@ public:
 
 			// Read stack_ array and format each element
 			uint64_t *stack = reinterpret_cast<uint64_t *>(current);
-			for (uint8_t i = 0; i < stack_sz; ++i) {
-				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, "\t    %llx\n", stack[i]);
-				// write(fd, output_buffer, std::strlen(output_buffer));
+			// currently, we just use 'enable_stack' to indicate if output the stack
+
+			if (!enable_bolt_) {
+				for (uint8_t i = 0; i < stack_sz; ++i) {
+					output_buffer_pos +=
+					    std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos,
+					                  "\t    %llx\n", stack[i]);
+					// write(fd, output_buffer, std::strlen(output_buffer));
+				}
+			} else {
+				output_buffer_pos +=
+					    std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos,
+					                  "%d\t0xffffffffffff ", tid_);	
 			}
 			current += stack_sz * sizeof(uint64_t);
 
@@ -214,5 +232,7 @@ private:
 	uint8_t *buffer_ {nullptr};
 	uint8_t *cur_ {nullptr}; // cur_ points to the current position of buffer_
 	int cap_ {0};
+	bool enable_bolt_{false};
+	int tid_{-1};
 };
 #endif

@@ -76,6 +76,7 @@ public:
 	}
 
 	void thread_context_destroy() {
+		drop_cnt_ = 0;
 		dr_standalone_exit();
 
 		destroy();
@@ -103,6 +104,7 @@ public:
 
 		if (thread_buffer_ != nullptr && buffer_manager_ != nullptr) {
 			INFO("thread %d return the dirty buffer", this->tid_);
+			thread_buffer_->set_tid(tid_);
 			buffer_manager_->put(thread_buffer_);
 		}
 		reset_entry();
@@ -209,7 +211,7 @@ public:
 	void enable_perf_breakpoint_event() {
 		state_ = thread_state::BREAKPOINT;
 
-		if (bp_fd_ == -1) {
+		if (bp_fd_ == -1 || bp_addr_ == UNKNOWN_ADDR) {
 			WARNING("breakpoint event is closed.");
 			return;
 		}

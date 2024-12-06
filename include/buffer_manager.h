@@ -23,6 +23,9 @@ public:
 		if (output_file == -1) {
 			perror("open");
 		}
+
+		std::ifstream b_file("ENABLE_STACK");
+		enable_bolt_ = b_file.good();
 	}
 
 	~BufferManager() {
@@ -79,6 +82,7 @@ public:
 		}
 
 		std::shared_ptr<Buffer> buffer = clean_buffers_.front();
+		buffer->set_enable_bolt(enable_bolt_);
 		clean_buffers_.pop();
 
 		return buffer;
@@ -149,6 +153,7 @@ private:
 	std::thread writer_thread_;
 	std::atomic<bool> stop_writer_;
 	int output_file = -1;
+	bool enable_bolt_{false};
 };
 
 #endif // BUFFER_MANAGER_H

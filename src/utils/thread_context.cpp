@@ -79,7 +79,7 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 	pe.disabled = 1;
 	pe.exclude_kernel = 1;	
 	
-	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, pe.bp_addr, bp_fd_.load());
+	DEBUG("%d successfully change breakpoint at %lx(fd: %d)", tid_, bp_addr_, bp_fd_.load());
 	// directly update the breakpoint attributes
 	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_MODIFY_ATTRIBUTES, &pe) != 0) {
 		WARNING("PERF_EVENT_IOC_MODIFY_ATTRIBUTES fails %d", errno);
@@ -88,10 +88,11 @@ void ThreadContext::change_perf_breakpoint_event(uint64_t addr) {
 
 	// test to see if the following resetting is necessary
 	if (ioctl(this->bp_fd_, PERF_EVENT_IOC_RESET, 0) != 0) {
-		ERROR("reset failure %d", tid_);
-		ERROR("PERF_EVENT_IOC_RESET");
+		WARNING("reset failure %d", tid_);
+		WARNING("PERF_EVENT_IOC_RESET");
 		return;
 	}
+	DEBUG("%d with bp addr:%lx", tid_, bp_addr_);
 }
 
 void ThreadContext::open_perf_sampling_event() {
@@ -116,7 +117,7 @@ void ThreadContext::open_perf_sampling_event() {
 	pe.size = sizeof(struct perf_event_attr);
 	pe.type = PERF_TYPE_HARDWARE;
 	pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-	pe.sample_period = 1000000 * 5;
+	pe.sample_period = 1000000 * 5; // 50k
 	pe.disabled = 1;
 	pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
 	pe.sample_type = PERF_SAMPLE_IP;
@@ -180,6 +181,7 @@ void ThreadContext::stack_lbr_entry_reset() {
 	                                                      thread_buffer_->get_buffer_size())) {
 		INFO("the buffer'size %d is less than needed size %d", thread_buffer_->get_buffer_size(),
 		     thread_stack_lbr_entry_.get_total_size());
+		thread_buffer_->set_tid(tid_);
 		thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_); // wait_clean_buffer
 	}
 

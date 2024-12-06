@@ -331,6 +331,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 	// judge what kind of the instruction is and get target address
 	uint64_t target_addr = UNKNOWN_ADDR;
 	opnd_t target_op = instr_get_target(d_insn);
+	// dr_print_opnd(dr_context, STDOUT, target_op, "DR-opnd: ");
 	if (instr_is_cbr(d_insn)) {
 		if (opnd_is_near_pc(target_op)) {
 			INFO("evaluate_x86: cbr is pc");
@@ -349,7 +350,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 			// for return, the return address is the last operand
 			target_op = instr_get_src(d_insn, instr_num_srcs(d_insn) - 1);
 		}
-		// dr_print_opnd(dr_context, STDOUT, target_op, "DR-opnd: ");
 		if (opnd_is_near_pc(target_op)) {
 			INFO("evaluate_x86: {return,call,jmp} is pc");
 			target_addr = (ptr_uint_t)opnd_get_pc(target_op);
