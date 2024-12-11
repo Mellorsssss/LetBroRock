@@ -103,8 +103,8 @@ public:
 			INFO("destroy the ThreadContext of thread %d", tid_);
 
 		if (thread_buffer_ != nullptr && buffer_manager_ != nullptr) {
-			INFO("thread %d return the dirty buffer", this->tid_);
-			thread_buffer_->set_tid(tid_);
+			INFO("thread %d return the dirty buffer", getpid());
+			thread_buffer_->set_tid(getpid());
 			buffer_manager_->put(thread_buffer_);
 		}
 		reset_entry();
@@ -143,6 +143,10 @@ public:
 
 	void set_tid(pid_t tid) {
 		tid_ = tid;
+	}
+
+	void set_global_sample_period(int period) {
+		global_sample_period_ = period;
 	}
 
 	pid_t get_tid() const {
@@ -372,6 +376,7 @@ private:
 	int branch_static_cnt_ {0};
 	int branch_dyn_cnt_ {0};
 	int drop_cnt_ {0};
+	int global_sample_period_{50000}; // default use 50k as sampling interval
 };
 
 #endif

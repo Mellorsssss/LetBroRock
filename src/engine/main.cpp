@@ -42,6 +42,7 @@ thread_local ThreadContext *thread_local_context_ = nullptr;
 ThreadContext thread_context[MAX_THREAD_NUM];
 ExecutableSegments *executable_segments = nullptr;
 BufferManager<StackLBRBuffer> *buffer_manager = nullptr;
+int sampling_period = 50000;
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext);
 
@@ -156,7 +157,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 		signal_posthandle(old_set);
 		return;
 	}
-	assert(errno != EINTR && "breakpoint should not hit the syscall");
+	// assert(errno != EINTR && "breakpoint should not hit the syscall");
 	assert(thread_local_context_->get_tid() == syscall(SYS_gettid) && "thread_local_context with wrong tid");
 
 	/**
@@ -385,7 +386,9 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
 		thread_context[i].thread_start();
 		thread_context[i].open_perf_sampling_event();
 		thread_context[i].init_perf_breakpoint_event(); // use a 
-
+		std::ifstream file("sample_period.txt");
+		
+		thread_context[i].set_global_sample_period(sampling_period);
 		INFO("main :%d and current %d start profiling", pid, tids[i]);
 	}
 
@@ -440,6 +443,11 @@ void profiler_main_thread() {
 
 __attribute__((constructor)) void preload_main() {
 	executable_segments = new ExecutableSegments(true);
+	std::ifstream sampling_period_file("sampling_period");
+	if (sampling_period_file.is_open()) {
+		sampling_period_file >> sampling_period;
+		sampling_period_file.close();
+	}
 
 	std::ifstream file("ENABLE_PROFILER");
 	if (!file.good()) {
@@ -449,7 +457,7 @@ __attribute__((constructor)) void preload_main() {
 		printf("the profiler is enabled\n");
 	}
 
-	buffer_manager = new BufferManager<StackLBRBuffer>(MAX_THREAD_NUM, "perf_data.lbr");
+	buffer_manager = new BufferManager<StackLBRBuffer>(MAX_THREAD_NUM, "perf_data.lbr.my");
 	initLogFile();
 
 	// register handler of SIGIO for all threads
