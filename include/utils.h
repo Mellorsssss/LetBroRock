@@ -45,8 +45,7 @@ std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed
 
 std::pair<uint64_t, bool> evaluate_x86(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
 
-std::pair<uint64_t, bool> evaluate_arm(void *dr_context, instr_t &d_insn, amed_context &context, amed_insn &insn,
-                                       ucontext_t *ucontext);
+std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext);
 
 
 int tgkill(pid_t group_id, pid_t tid, int signo);

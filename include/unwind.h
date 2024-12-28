@@ -48,7 +48,10 @@ private:
 		unw_tdep_context_t *context = reinterpret_cast<unw_tdep_context_t *>(&context_);
 #if defined(__aarch64__)
 		const ucontext_t *uc = reinterpret_cast<const ucontext_t *>(sigcontext);
-		memcpy(context, uc, sizeof(ucontext_t));
+		context->uc_mcontext.regs[29] = uc->uc_mcontext.regs[29]; // FP (x29)
+		context->uc_mcontext.regs[30] = uc->uc_mcontext.regs[30]; // LR (x30) 
+		context->uc_mcontext.sp = uc->uc_mcontext.sp; // SP
+		context->uc_mcontext.pc = uc->uc_mcontext.pc; // PC
 #elif defined(__x86_64__)
 		const ucontext_t *uc = (const ucontext_t *)sigcontext;
 		context->uc_mcontext.gregs[REG_RBP] = uc->uc_mcontext.gregs[REG_RBP];

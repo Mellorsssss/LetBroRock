@@ -12,7 +12,11 @@
 #include <dirent.h>
 #include <dr_defines.h>
 #include <libunwind-ptrace.h>
+#if defined(__x86_64__)
 #include <libunwind-x86_64.h>
+#elif defined(__aarch64__)
+#include <libunwind-aarch64.h>
+#endif
 #include <libunwind.h>
 #include <linux/hw_breakpoint.h>
 #include <string>
@@ -303,16 +307,14 @@ std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, 
 std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext) {
 #if defined(__x86_64__)
 	return evaluate_x86(dr_context, context, insn, ucontext);
-#elif define(aarch64)
+#elif defined(__aarch64__)
 	return evaluate_arm(dr_context, context, insn, ucontext);
 #endif
 }
 
-void aux_get_app_addr(void *dr_context, instr_t *target_op, uint64_t *app_addr) {
-}
-
 std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context, amed_insn &insn,
                                        ucontext_t *ucontext) {
+#if defined(__x86_64__)
 	assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
 	dr_mcontext_t mcontext;
@@ -522,120 +524,261 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 		INFO("continue from %#lx", target_addr);
 	}
 	return std::make_pair(target_addr, taken);
+#else
+	return std::make_pair(UNKNOWN_ADDR, false);
+#endif
 }
 
-std::pair<uint64_t, bool> evaluate_arm(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext) {
+std::pair<uint64_t, bool> evaluate_arm(void *dr_context_, amed_context &context, amed_insn &insn, ucontext_t *ucontext) {
 // TODO(guichuan): determin if an cti instruction is taken
 #if defined(__aarch64__)
-	assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
+		assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
 	dr_mcontext_t mcontext;
+	void *dr_context = dr_get_current_drcontext();
 	init_dr_mcontext(&mcontext, ucontext);
-	instr_t d_insn;
-	instr_init(dr_context, &d_insn);
+	instr_noalloc_t noalloc;
+	instr_noalloc_init(dr_context, &noalloc);
+	instr_t *d_insn = instr_from_noalloc(&noalloc);
 	byte *addr = (byte *)(get_pc(ucontext));
 
-	if (decode(dr_context, addr, &d_insn) == nullptr) {
+	if (decode(dr_context, addr, d_insn) == nullptr) {
 		ERROR("fail to decode the instruction using dynamorio");
 	}
+	// dr_print_instr(dr_context, STDOUT, d_insn, "DR-instrcution: ");
 
-	// judge what kind of the instruction is
-	if (AMED_CATEGORY_BRANCH == insn.categories[1]) {
-		assert(instr_is_cbr(&d_insn) || instr_is_ubr(&d_insn) || instr_is_mbr(&d_insn));
-	} else if (AMED_CATEGORY_CALL == insn.categories[1]) {
-		assert(instr_is_call(&d_insn));
-	} else if (AMED_CATEGORY_RET == insn.categories[1]) {
-		assert(instr_is_return(&d_insn));
-	} else {
-		puts("interworking branch.");
-	}
-
-	opnd_t target_op = instr_get_target(&d_insn);
-	app_pc target_address = nullptr;
+	// judge what kind of the instruction is and get target address
 	uint64_t target_addr = UNKNOWN_ADDR;
-	if (opnd_is_memory_reference(target_op)) {
-		DEBUG("evaluate_arm: is memory ref");
-	} else if (opnd_is_pc(target_op)) {
-		DEBUG("evaluate_arm: is pc");
-	} else if (opnd_is_reg(target_op)) {
-		DEBUG("evaluate_arm: is reg");
-	}
-
-	// dr_print_opnd(dr_context, STDOUT, target_op, "the opnd is :");
-
-	if (opnd_is_immed(target_op)) {
-		if (opnd_is_immed_int(target_op)) {
-			target_addr = opnd_get_immed_int(target_op);
+	opnd_t target_op = instr_get_target(d_insn);
+	// dr_print_opnd(dr_context, STDOUT, target_op, "DR-opnd: ");
+	if (instr_is_cbr(d_insn)) {
+		if (opnd_is_near_pc(target_op)) {
+			INFO("evaluate_x86: cbr is pc");
+			target_addr = (ptr_uint_t)opnd_get_pc(target_op);
+		} else if (opnd_is_near_instr(target_op)) {
+			INFO("evaluate_x86: cbr is instr");
+			instr_t *tgt = opnd_get_instr(target_op);
+			target_addr = (ptr_uint_t)instr_get_app_pc(tgt);
+			assert(target_addr != 0 && "dr_insert_cbr_instrumentation: unknown target");
 		} else {
-			assert(0 && "direct control flow trasfer should only go to int address!");
+			assert(false && "dr_insert_cbr_instrumentation: unknown target");
+			target_addr = 0;
 		}
-	} else if (opnd_is_pc(target_op)) {
-		target_address = opnd_get_pc(target_op); // TODO: is this always offset?
-		if (target_address == nullptr) {
-			ERROR("fail to compute the address of operand");
+	} else if (instr_is_mbr(d_insn)) {
+		if (instr_is_return(d_insn)) {
+			// for return, the return address is the last operand
+			target_op = instr_get_src(d_insn, instr_num_srcs(d_insn) - 1);
 		}
-		target_addr = (uint64_t)(target_address);
-	} else if (opnd_is_reg(target_op)) {
-		target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext) + insn.length; // TODO: is this always offset?
+		if (opnd_is_near_pc(target_op)) {
+			INFO("evaluate_x86: {return,call,jmp} is pc");
+			target_addr = (ptr_uint_t)opnd_get_pc(target_op);
+			// } else if (opnd_is_near_instr(target_op)) {
+		} else if (opnd_is_near_instr(target_op)) {
+			INFO("evaluate_x86: {return,call,jmp} is instr");
+			instr_t *tgt = opnd_get_instr(target_op);
+			target_addr = (ptr_uint_t)instr_get_app_pc(tgt);
+			assert(target_addr != 0 && "dr_insert_cbr_instrumentation: unknown target");
+		} else if (opnd_is_memory_reference(target_op)) {
+			INFO("evaluate_x86: {return,call,jmp} is memory ref");
+			app_pc temp_addr = opnd_compute_address(target_op, &mcontext);
+			if (temp_addr == nullptr) {
+				ERROR("fail to compute the address of operand");
+			}
+			// Dereference temp_addr to get the actual target address stored at that memory location
+			target_addr = *(uint64_t *)(temp_addr);
+			// target_addr = (uint64_t)(temp_addr);
+		} else if (opnd_is_reg(target_op)) {
+			INFO("evaluate_x86: {return,call,jmp} is reg");
+			target_addr = reg_get_value(opnd_get_reg(target_op), &mcontext);
+		} else {
+			assert(false && "dr_insert_cbr_instrumentation: unknown target");
+			target_addr = 0;
+		}
+	} else if (instr_is_call(d_insn) || instr_is_ubr(d_insn)) {
+		// For call instructions, return address is next instruction
+		if (opnd_is_pc(target_op)) {
+			INFO("evaluate_x86: {call,ubr} is pc");
+
+			if (opnd_is_far_pc(target_op)) {
+				/* FIXME: handle far pc */
+				assert(false && "dr_insert_{ubr,call}_instrumentation: far pc not supported");
+			}
+
+			target_addr = (ptr_uint_t)opnd_get_pc(target_op);
+		} else if (opnd_is_instr(target_op)) {
+			INFO("evaluate_x86: {call,ubr} is instr");
+
+			// Get the target instruction
+			instr_t *tgt = opnd_get_instr(target_op);
+
+			// Instead of using translation field directly, get the PC from the instruction
+			target_addr = (ptr_uint_t)instr_get_app_pc(tgt);
+			if (target_addr == 0) {
+				// Fallback to getting raw bits if app PC not available
+				target_addr = (ptr_uint_t)instr_get_raw_bits(tgt);
+			}
+
+			assert(target_addr != 0 && "dr_insert_{ubr,call}_instrumentation: unknown target");
+
+			if (opnd_is_far_instr(target_op)) {
+				/* FIXME: handle far instr */
+				assert(false && "dr_insert_{ubr,call}_instrumentation: far instr "
+				                "not supported");
+			}
+		} else {
+			assert(false && "dr_insert_{ubr,call}_instrumentation: unknown target");
+			target_addr = 0;
+		}
 	} else {
-		target_address = opnd_compute_address(target_op, &mcontext);
-		if (target_address == nullptr) {
-			ERROR("fail to compute the address of operand");
-		}
-		target_addr = (uint64_t)(target_address);
+		assert(0 && "fail to decode such a branch");
 	}
 
-	if (target_addr == UNKNOWN_ADDR) {
-		puts("fail to get the target address of the operand");
-		exit(EXIT_FAILURE);
-	} else {
-		DEBUG("the target address of the current instruction is %#lx", target_addr);
-	}
+	auto condition_holds = [](uint8_t cond, const dr_mcontext_t *mcontext) -> bool {
+		assert(cond <= 0xF && "provided cond must less than 4 bits!");
 
-	bool taken = true;
-	if (instr_is_cbr(&d_insn)) {
-		uint32_t eflags = mcontext.xflags;
-
-		switch (instr_get_opcode(&d_insn)) {
-		// TODO:
-		case OP_b:
-		case OP_bl:
-		case OP_blr:
-		case OP_br:
-		case OP_blrab:
-		case OP_blrabz:
-		case OP_braaz:
-		case OP_brab:
-		case OP_brabz:
-			taken = true;
+		bool res = false;
+		bool n = mcontext->xflags >> 31 & 1;
+		bool z = mcontext->xflags >> 30 & 1;
+		bool c = mcontext->xflags >> 29 & 1;
+		bool v = mcontext->xflags >> 28 & 1;
+		switch (cond >> 1) {
+		case 0x0:
+			res = z;
 			break;
-
-		// TODO: following OP code should be handled seperately
-		case OP_bcond:
-		case OP_cbnz:
-		case OP_cbz:
-		case OP_tbnz:
-		case OP_tbz:
-			// TODO: handle the conditonal jump
-			taken = true;
+		case 0x1:
+			res = c;
+			break;
+		case 0x2:
+			res = n;
+			break;
+		case 0x3:
+			res = v;
+			break;
+		case 0x4:
+			res = c && !z;
+			break;
+		case 0x5:
+			res = n == v;
+			break;
+		case 0x6:
+			res = n == v && !z;
+			break;
+		case 0x7:
+			res = true;
 			break;
 		default:
-			// Handle other conditional branches as needed
-			assert(0 && "unhandled jump instruction.");
-			break;
+			assert(0 && "provided cond must less than 4 bits!");
 		}
 
-		std::string log_str = "the conditional branch is ";
-		if (!taken)
-			log_str += "not ";
-		log_str += "taken";
-		DEBUG("%s", log_str.c_str());
-	} else {
-		DEBUG("the unconditional branch is taken");
-	}
+		if ((cond & 1) == 1 && cond != 0xF) {
+			res = !res;
+		}
 
+		return res;
+	};
+
+	auto sign_extend = [](uint64_t origin, uint8_t bit_length) -> int64_t {
+		return static_cast<int64_t>(origin) << (64 - bit_length) >> (64 - bit_length);
+	};
+
+	WARNING("at the address %#lx", target_addr);
+	bool taken = true;
+	uint32_t raw_inst = *(uint32_t*)addr;
+	switch (instr_get_opcode(d_insn)) {
+	case OP_b: {
+		WARNING("instruction \"b\" is a static branch");
+		// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+		taken = true;
+		// target_addr = mcontext.r15 + imm;
+		break;
+	}
+	case OP_bl: {
+		WARNING("instruction \"bl\" is a static branch");
+		// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+		taken = true;
+		// target_addr = mcontext.r15 + imm;
+		break;
+	}
+	case OP_blr: {
+		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+		taken = true;
+		// target_addr = ucontext->uc_mcontext.regs[reg_id];
+		break;
+	}
+	case OP_br: {
+		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+		taken = true;
+		// target_addr = ucontext->uc_mcontext.regs[reg_id];
+		break;
+	}
+	case OP_blraa:
+	case OP_blraaz:
+	case OP_blrab:
+	case OP_blrabz: {
+		WARNING("branch with pointer authentication is not fully supported");
+		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+		taken = true;
+		// target_addr = ucontext->uc_mcontext.regs[reg_id];
+		break;
+	}
+	case OP_braa:
+	case OP_braaz:
+	case OP_brab:
+	case OP_brabz: {
+		WARNING("branch with pointer authentication is not fully supported");
+		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+		taken = true;
+		// target_addr = ucontext->uc_mcontext.regs[reg_id];
+		break;
+	}
+	case OP_bcond: {
+		uint8_t cond = raw_inst & ((1 << 4) - 1);
+		int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+
+		taken = condition_holds(cond, &mcontext);
+		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+		break;
+	}
+	case OP_cbnz: {
+		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+
+		taken = ucontext->uc_mcontext.regs[reg_id] != 0;
+		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+		break;
+	}
+	case OP_cbz: {
+		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+
+		taken = ucontext->uc_mcontext.regs[reg_id] == 0;
+		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+		break;
+	}
+	case OP_tbnz: {
+		uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
+		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+
+		taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) != 0;
+		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+		break;
+	}
+	case OP_tbz: {
+		uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
+		// int64_t imm =
+		                       sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+
+		taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) == 0;
+		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+		break;
+	}
+	default:
+		assert(0 && "this instruction is not a branch instruction!");
+	}
 	// handle the cbr
-	instr_free(dr_context, &d_insn);
+	instr_free(dr_context, d_insn);
 
 	INFO("dynamically evaluated address %#lx", target_addr);
 	if (taken) {
