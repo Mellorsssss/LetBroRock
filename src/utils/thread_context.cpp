@@ -117,7 +117,7 @@ void ThreadContext::open_perf_sampling_event() {
 	pe.size = sizeof(struct perf_event_attr);
 	pe.type = PERF_TYPE_HARDWARE;
 	pe.config = PERF_COUNT_HW_CPU_CYCLES;
-	pe.sample_period = 100 * 5; // 50k
+	pe.sample_period = global_sample_period_;
 	pe.disabled = 1;
 	pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap
 	pe.sample_type = PERF_SAMPLE_IP;
@@ -181,7 +181,7 @@ void ThreadContext::stack_lbr_entry_reset() {
 	                                                      thread_buffer_->get_buffer_size())) {
 		INFO("the buffer'size %d is less than needed size %d", thread_buffer_->get_buffer_size(),
 		     thread_stack_lbr_entry_.get_total_size());
-		thread_buffer_->set_tid(tid_);
+		thread_buffer_->set_tid(getpid());
 		thread_buffer_ = buffer_manager_->swap_buffer(thread_buffer_); // wait_clean_buffer
 	}
 

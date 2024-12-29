@@ -195,7 +195,7 @@ public:
 			} else {
 				output_buffer_pos +=
 					    std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos,
-					                  "%d\t0xffffffffffff ", tid_);	
+					                  "%d    ffffffffffff", tid_);	
 			}
 			current += stack_sz * sizeof(uint64_t);
 
@@ -209,13 +209,13 @@ public:
 			// blank space before the first lbr sample
 			output_buffer[output_buffer_pos++] = ' ';
 			for (int i = branch_sz - 1; i >= 0; --i) {
-				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, "%#llx/%#llx/-/-/-/1  ", branch[i * 2],
+				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, " %#llx/%#llx/-/-/-/1", branch[i * 2],
 				              branch[i * 2 + 1]);
 				// write(fd, output_buffer, std::strlen(output_buffer));
 			}
 			// write(fd, "\n\n", 2); // add a newline between different entries
 			output_buffer[output_buffer_pos++] = '\n';
-			output_buffer[output_buffer_pos++] = '\n';
+			// output_buffer[output_buffer_pos++] = '\n';
 			current += branch_sz * 2 * sizeof(uint64_t);
 		}
 

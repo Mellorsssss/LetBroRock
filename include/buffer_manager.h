@@ -19,7 +19,7 @@ class BufferManager {
 public:
 	BufferManager(int num_threads, const std::string &output_path) : num_threads_(num_threads), stop_writer_(false) {
 		stop_writer_ = false;
-		output_file = open("perf_data.lbr", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		output_file = open(output_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		if (output_file == -1) {
 			perror("open");
 		}
