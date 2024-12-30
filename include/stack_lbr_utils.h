@@ -157,10 +157,10 @@ public:
 
 	void output(int fd) {
 		static int output_cnt = 0;
-		output_cnt+= (cur_ - buffer_)/sizeof(uint8_t);
+		output_cnt += (cur_ - buffer_) / sizeof(uint8_t);
 		uint8_t *current = buffer_;
 		constexpr int output_buffer_size = 1024 * 1024; // 1MB
-		char output_buffer[output_buffer_size]; // temporary buffer for formatted output
+		char output_buffer[output_buffer_size];         // temporary buffer for formatted output
 		uint64_t output_buffer_pos = 0;
 		if (fd == -1) {
 			ERROR("reopen fd is %d", fd);
@@ -183,7 +183,6 @@ public:
 
 			// Read stack_ array and format each element
 			uint64_t *stack = reinterpret_cast<uint64_t *>(current);
-			// currently, we just use 'enable_stack' to indicate if output the stack
 
 			if (!enable_bolt_) {
 				for (uint8_t i = 0; i < stack_sz; ++i) {
@@ -193,9 +192,8 @@ public:
 					// write(fd, output_buffer, std::strlen(output_buffer));
 				}
 			} else {
-				output_buffer_pos +=
-					    std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos,
-					                  "%d    ffffffffffff", tid_);	
+				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos,
+				                                   output_buffer_size - output_buffer_pos, "%d    ffffffffffff", tid_);
 			}
 			current += stack_sz * sizeof(uint64_t);
 
@@ -209,8 +207,9 @@ public:
 			// blank space before the first lbr sample
 			output_buffer[output_buffer_pos++] = ' ';
 			for (int i = branch_sz - 1; i >= 0; --i) {
-				output_buffer_pos += std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos, " %#llx/%#llx/-/-/-/1", branch[i * 2],
-				              branch[i * 2 + 1]);
+				output_buffer_pos +=
+				    std::snprintf(output_buffer + output_buffer_pos, output_buffer_size - output_buffer_pos,
+				                  " %#llx/%#llx/-/-/-/1", branch[i * 2], branch[i * 2 + 1]);
 				// write(fd, output_buffer, std::strlen(output_buffer));
 			}
 			// write(fd, "\n\n", 2); // add a newline between different entries
@@ -232,7 +231,7 @@ private:
 	uint8_t *buffer_ {nullptr};
 	uint8_t *cur_ {nullptr}; // cur_ points to the current position of buffer_
 	int cap_ {0};
-	bool enable_bolt_{false};
-	int tid_{-1};
+	bool enable_bolt_ {false};
+	int tid_ {-1};
 };
 #endif

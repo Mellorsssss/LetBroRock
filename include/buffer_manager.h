@@ -17,15 +17,13 @@
 template <class Buffer>
 class BufferManager {
 public:
-	BufferManager(int num_threads, const std::string &output_path) : num_threads_(num_threads), stop_writer_(false) {
+	BufferManager(int num_threads, const std::string &output_path, bool enable_bolt)
+	    : num_threads_(num_threads), stop_writer_(false), enable_bolt_(enable_bolt) {
 		stop_writer_ = false;
 		output_file = open(output_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		if (output_file == -1) {
 			perror("open");
 		}
-
-		std::ifstream b_file("ENABLE_STACK");
-		enable_bolt_ = b_file.good();
 	}
 
 	~BufferManager() {
@@ -153,7 +151,7 @@ private:
 	std::thread writer_thread_;
 	std::atomic<bool> stop_writer_;
 	int output_file = -1;
-	bool enable_bolt_{false};
+	bool enable_bolt_ {false};
 };
 
 #endif // BUFFER_MANAGER_H

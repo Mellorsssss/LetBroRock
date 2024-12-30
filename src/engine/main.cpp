@@ -4,7 +4,6 @@
 #include "executable_segments.h"
 #include "utils.h"
 
-
 #include <atomic>
 #include <bits/siginfo-arch.h>
 #include <bits/siginfo-consts.h>
@@ -15,6 +14,7 @@
 #include <fstream>
 #include <linux/hw_breakpoint.h>
 #include <linux/perf_event.h>
+#include <nlohmann/json.hpp>
 #include <pthread.h>
 #include <shared_mutex>
 #include <signal.h>
@@ -53,14 +53,14 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
 void signal_prehandle(sigset_t &old_set) {
 	// as the same signal will be blocked in the handler, we don't need to block it again
 	// return;
-    sigset_t new_set;
-    sigfillset(&new_set);
-    sigprocmask(SIG_SETMASK, &new_set, &old_set);
+	sigset_t new_set;
+	sigfillset(&new_set);
+	sigprocmask(SIG_SETMASK, &new_set, &old_set);
 }
 
 void signal_posthandle(sigset_t &old_set) {
 	// return;
-    sigprocmask(SIG_SETMASK, &old_set, nullptr);
+	sigprocmask(SIG_SETMASK, &old_set, nullptr);
 }
 
 class TimerGuard {
@@ -140,8 +140,9 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	// This avoids recursively hitting breakpoints in our own profiling code.
 	thread_local_context_->disable_perf_breakpoint_event();
-	if (thread_local_context_->is_stop()) return;
-	
+	if (thread_local_context_->is_stop())
+		return;
+
 	// Disable breakpoint events to prevent false triggers from libprofiler.so code execution.
 	sigset_t old_set;
 	signal_prehandle(old_set);
@@ -176,7 +177,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	}
 
 	if (thread_local_context_->get_breakpoint_fd() != info->si_fd) {
-		WARNING("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd, thread_local_context_->get_breakpoint_fd());
+		WARNING("breakpoint hit with wrong fd:%d(expected %d)", info->si_fd,
+		        thread_local_context_->get_breakpoint_fd());
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -188,7 +190,7 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 	uint64_t pc = get_pc(uc);
 	if (pc != bp_addr) {
 		WARNING("pid %d real breakpoint %#lx(fd: %d) is different from setted breakpoint addr %#lx",
-		      thread_local_context_->get_tid(), pc, info->si_fd, bp_addr);
+		        thread_local_context_->get_tid(), pc, info->si_fd, bp_addr);
 		// continue with the previous breakpoint setting, so we need to cancel the deferred
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -198,8 +200,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 
 	if (bp_addr != thread_local_context_->get_branch().from_addr ||
 	    !executable_segments->isAddressInExecutableSegment(pc)) {
-		ERROR("pid %d with unmatched breakpoint address(%#lx vs %#lx)",
-		      thread_local_context_->get_tid(), bp_addr, thread_local_context_->get_branch().from_addr);
+		ERROR("pid %d with unmatched breakpoint address(%#lx vs %#lx)", thread_local_context_->get_tid(), bp_addr,
+		      thread_local_context_->get_branch().from_addr);
 		thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -293,7 +295,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 			return;
 		}
 	}
-	
+
 	if (thread_local_context_->is_stop()) {
 		signal_posthandle(old_set);
 		return;
@@ -324,8 +326,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	 * 2. fd triggering event is sampling_fd_
 	 */
 	if (!thread_local_context_->is_sampling()) {
-		WARNING("thread %d redudant sampling handler(probably from previous fd:%d), just return",
-		      tid, info->si_fd);
+		WARNING("thread %d redudant sampling handler(probably from previous fd:%d), just return", tid, info->si_fd);
 		// TODO: why I commented the following line? Fuck.
 		// thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
@@ -336,7 +337,7 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 	if (thread_local_context_->get_sampling_fd() != info->si_fd) {
 		// why hit wrong
 		WARNING("thread %d sampling hit with wrong fd:%d(expected %d)", thread_local_context_->get_tid(), info->si_fd,
-		      thread_local_context_->get_sampling_fd());
+		        thread_local_context_->get_sampling_fd());
 		// thread_local_context_->enable_perf_sampling_event();
 		thread_local_context_->handler_num_dec();
 		signal_posthandle(old_set);
@@ -385,9 +386,9 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
 		thread_context[i].set_buffer_manager(buffer_manager);
 		thread_context[i].thread_start();
 		thread_context[i].open_perf_sampling_event();
-		thread_context[i].init_perf_breakpoint_event(); // use a 
+		thread_context[i].init_perf_breakpoint_event(); // use a
 		std::ifstream file("sample_period.txt");
-		
+
 		thread_context[i].set_global_sample_period(sampling_period);
 		INFO("main :%d and current %d start profiling", pid, tids[i]);
 	}
@@ -426,7 +427,7 @@ void profiler_main_thread() {
 	pid_t tid = syscall(SYS_gettid);
 	int restart_count = 0;
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	while (true) {
 		buffer_manager->init();
 		auto tids = start_profiler(pid, tid);
@@ -442,22 +443,68 @@ void profiler_main_thread() {
 }
 
 __attribute__((constructor)) void preload_main() {
+	using json = nlohmann::json;
+
 	executable_segments = new ExecutableSegments(true);
-	std::ifstream sampling_period_file("sampling_period");
-	if (sampling_period_file.is_open()) {
-		sampling_period_file >> sampling_period;
-		sampling_period_file.close();
-	}
+	bool enable_stack = false;
+	try {
+		std::ifstream config_file("config.json");
+		if (!config_file.is_open()) {
+			printf("Failed to open config.json\n");
+			return;
+		}
 
-	std::ifstream file("ENABLE_PROFILER");
-	if (!file.good()) {
-		printf("the profiler is disabled\n");
+		json config;
+		config_file >> config;
+		config_file.close();
+
+		if (config.contains("sampling_period")) {
+			sampling_period = config["sampling_period"];
+		}
+
+		if (config.contains("enable_profiler")) {
+			if (config["enable_profiler"]) {
+				printf("the profiler is enabled\n");
+			} else {
+				printf("the profiler is disabled\n");
+				return;
+			}
+		} else {
+			printf("enable_profiler not found in config\n");
+			return;
+		}
+
+		if (config.contains("enable_stack")) {
+			if (config["enable_stack"]) {
+				printf("stack collection is enabled\n");
+				enable_stack = true;
+			} else {
+				printf("stack collection is disabled\n");
+				enable_stack = false;
+			}
+		} else {
+			enable_stack = true;
+			printf("enable_stack not found in config\n");
+		}
+
+		if (config.contains("enable_log")) {
+			if (config["enable_log"]) {
+				printf("logging is enabled\n");
+				ENABLE_LOG = true;
+			} else {
+				printf("logging is disabled\n");
+				ENABLE_LOG = false;
+			}
+		} else {
+			printf("enable_log not found in config\n");
+			ENABLE_LOG = true; // default to enabled if not specified
+		}
+	} catch (const std::exception &e) {
+		printf("Error parsing config.json: %s\n", e.what());
 		return;
-	} else {
-		printf("the profiler is enabled\n");
 	}
 
-	buffer_manager = new BufferManager<StackLBRBuffer>(MAX_THREAD_NUM, "perf_data.lbr.my");
+	buffer_manager = new BufferManager<StackLBRBuffer>(MAX_THREAD_NUM, "perf_data.lbr.my", !enable_stack);
 	initLogFile();
 
 	// register handler of SIGIO for all threads
@@ -485,7 +532,7 @@ __attribute__((constructor)) void preload_main() {
 			return;
 		}
 	}
-	
+
 	std::thread t(profiler_main_thread);
 	t.detach();
 
