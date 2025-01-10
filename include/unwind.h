@@ -2,6 +2,7 @@
 #define UNWIND
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
+#include <log.h>
 #include <string.h>
 #include <ucontext.h>
 
@@ -22,7 +23,8 @@ public:
 
 	inline bool unwind(siginfo_t *siginfo, void *sigcontext, uint64_t *buffer, uint8_t max_frame_size,
 	                   uint8_t &real_frame_size) {
-		extract_from_context(sigcontext);
+		// extract_from_context(sigcontext);
+		unw_getcontext(&context_);
 
 		real_frame_size = 0;
 
@@ -34,11 +36,21 @@ public:
 		do {
 			unw_word_t pc;
 			ret = unw_get_reg(cursor, UNW_REG_IP, &pc);
+			if (ret < 0) {
+				return false;
+			}
 
-			buffer[real_frame_size] = pc;
+			buffer[real_frame_size++] = pc;
+
 			ret = unw_step(cursor);
-			real_frame_size++;
-		} while (ret > 0 && real_frame_size < max_frame_size);
+			if (ret < 0) {
+				return false;
+			}
+
+			if (real_frame_size >= max_frame_size) {
+				break;
+			}
+		} while (ret > 0);
 
 		return true;
 	}
@@ -48,8 +60,10 @@ private:
 		unw_tdep_context_t *context = reinterpret_cast<unw_tdep_context_t *>(&context_);
 #if defined(__aarch64__)
 		const ucontext_t *uc = reinterpret_cast<const ucontext_t *>(sigcontext);
-		context->uc_mcontext.regs[29] = uc->uc_mcontext.regs[29]; // FP (x29)
-		context->uc_mcontext.regs[30] = uc->uc_mcontext.regs[30]; // LR (x30) 
+		// Copy all general purpose registers (x0-x28)
+		for (int i = 0; i < 31; i++) {
+			context->uc_mcontext.regs[i] = uc->uc_mcontext.regs[i];
+		}
 		context->uc_mcontext.sp = uc->uc_mcontext.sp; // SP
 		context->uc_mcontext.pc = uc->uc_mcontext.pc; // PC
 #elif defined(__x86_64__)
