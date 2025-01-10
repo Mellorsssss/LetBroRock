@@ -16,6 +16,8 @@ typedef enum {
 
 static int logFd = -1;
 extern bool ENABLE_LOG;
+extern bool ENABLE_TIMESTAMP;
+extern LogLevel LOG_LEVEL;
 void logMessage(LogLevel level, const char *file, int line, const char *format, ...);
 void initLogFile();
 
