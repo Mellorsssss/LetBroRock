@@ -115,8 +115,8 @@ void ThreadContext::open_perf_sampling_event() {
 	struct perf_event_attr pe;
 	memset(&pe, 0, sizeof(struct perf_event_attr));
 	pe.size = sizeof(struct perf_event_attr);
-	pe.type = PERF_TYPE_HARDWARE;
-	pe.config = PERF_COUNT_HW_CPU_CYCLES;
+	pe.type = PERF_TYPE_SOFTWARE;
+	pe.config = PERF_COUNT_SW_CPU_CLOCK;
 	pe.sample_period = global_sample_period_;
 	pe.disabled = 1;
 	pe.mmap = 1; // it seems that the sampling mode is only enabled combined with mmap

@@ -6,6 +6,7 @@
 #include "dr_api.h"
 #include "dr_tools.h"
 #include "log.h"
+#include "runtime_simulator.h"
 #include "stack_lbr_utils.h"
 #include "unwind.h"
 
@@ -93,7 +94,7 @@ public:
 
 		state_ = CLOSED;
 	}
-	
+
 	bool is_stop() const {
 		return state_.load() == CLOSED;
 	}
@@ -109,8 +110,18 @@ public:
 		}
 		reset_entry();
 		thread_buffer_ = nullptr;
-		if (tid_)
-			INFO("the thread %d records %d branches(drops %d branches).", tid_, branch_dyn_cnt_, drop_cnt_);
+		if (tid_) {
+			WARNING("the thread %d dynamically records %d branches, statically %d records, infer %d records(drops %d "
+			        "branches).",
+			        tid_, branch_dyn_cnt_, branch_static_cnt_, branch_infer_cnt_, drop_cnt_);
+			if (total_branch_cnt_) {
+				*total_branch_cnt_ += (branch_dyn_cnt_ + branch_static_cnt_ + branch_infer_cnt_);
+			}
+		}
+
+		branch_dyn_cnt_ = 0;
+		branch_static_cnt_ = 0;
+		branch_infer_cnt_ = 0;
 	}
 
 	void reset() {
@@ -211,7 +222,7 @@ public:
 			return;
 		}
 	}
-	
+
 	void enable_perf_breakpoint_event() {
 		state_ = thread_state::BREAKPOINT;
 
@@ -325,11 +336,68 @@ public:
 
 	/** branch tracing statistics **/
 	void add_static_branch() {
-		// branch_static_cnt_++;
+		branch_static_cnt_++;
 	}
 
 	void add_dynamic_branch() {
-		// branch_dyn_cnt_++;
+		branch_dyn_cnt_++;
+	}
+
+	void add_infer_branch() {
+		branch_infer_cnt_++;
+	}
+
+	void set_total_branch_cnt(int *total_branch_cnt) {
+		total_branch_cnt_ = total_branch_cnt;
+	}
+
+	/** runtime simulator related **/
+	int set_simulator_context(ucontext_t &uc) {
+		return simulator_.set_runtime_context(uc);
+	}
+
+	int append_simulator_code(int *addr, size_t size) {
+		return simulator_.append_code(addr, size);
+	}
+
+	int execute_simulator() {
+		return simulator_.execute();
+	}
+
+	uint64_t get_simulator_pc() {
+		return simulator_.get_pc();
+	}
+
+	int query_simulator_mem(uint64_t addr, int *data) {
+		return simulator_.query_mem(addr, data);
+	}
+
+	uint64_t get_simulator_register(uint8_t register_no) {
+		return simulator_.get_register(register_no);
+	}
+
+	void reset_simulator() {
+		simulator_.reset();
+	}
+
+	void set_halt_pc(uint64_t pc) {
+		simulator_.set_halt_pc(pc);
+	}
+
+	void print_simulator_regs() {
+		simulator_.print_regs();
+	}
+
+	void set_simulator_used(bool used) {
+		simulator_used_ = used;
+	}
+
+	bool get_simulator_used() const {
+		return simulator_used_;
+	}
+
+	void init_simulator() {
+		simulator_.open();
 	}
 
 private:
@@ -337,16 +405,16 @@ private:
 
 	/**
 	 * ThreadContext is driven by a FSM. The state transfers as following:
-	 * 
-                                     ┌──────┐           ┌───────┐ 
-                                     │      │           │       │ 
-                                     │      │           │       │ 
-                                     │      ▼           │       ▼ 
-    CLOSED ────────► INIT ────────►  SAMPLING ────────► BREAKPOINT
-                                         ▲                  │     
-                                         │                  │     
-                                         │                  │     
-                                         └──────────────────┘     
+	 *
+	                                 ┌──────┐           ┌───────┐
+	                                 │      │           │       │
+	                                 │      │           │       │
+	                                 │      ▼           │       ▼
+	CLOSED ────────► INIT ────────►  SAMPLING ────────► BREAKPOINT
+	                                     ▲                  │
+	                                     │                  │
+	                                     │                  │
+	                                     └──────────────────┘
 	 */
 	typedef enum _thread_state {
 		SAMPLING = 1, // to make & operation valid
@@ -375,8 +443,14 @@ private:
 	/* statistics */
 	int branch_static_cnt_ {0};
 	int branch_dyn_cnt_ {0};
+	int branch_infer_cnt_ {0};
 	int drop_cnt_ {0};
-	int global_sample_period_{50000}; // default use 50k as sampling interval
+	int *total_branch_cnt_ {nullptr};
+	int global_sample_period_ {50000}; // default use 50k as sampling interval
+
+	/* runtime simulator */
+	ArmRuntimeSimulator simulator_;
+	bool simulator_used_ {false};
 };
 
 #endif

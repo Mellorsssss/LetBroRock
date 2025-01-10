@@ -43,12 +43,20 @@ ThreadContext thread_context[MAX_THREAD_NUM];
 ExecutableSegments *executable_segments = nullptr;
 BufferManager<StackLBRBuffer> *buffer_manager = nullptr;
 int sampling_period = 50000;
+bool ENABLE_RUNTIME = false;
+int *total_branch_cnt = new int(0); //{nullptr};
+std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+std::atomic<bool> profiler_stop {false};
+static std::thread profiler_thread;
+
+int b_cnt = 0;
+int s_cnt = 0;
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext);
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext);
 
-bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc);
+bool find_next_unresolved_branch(ThreadContext &tcontext, ucontext_t *uc, uint64_t pc);
 
 void signal_prehandle(sigset_t &old_set) {
 	// as the same signal will be blocked in the handler, we don't need to block it again
@@ -69,9 +77,9 @@ public:
 	}
 
 	~TimerGuard() {
-		// auto end = std::chrono::high_resolution_clock::now();
-		// std::chrono::duration<double, std::milli> elapsed = end - start_;
-		// INFO("%s took %.2f ms", name_.c_str(), elapsed.count());
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::micro> elapsed = end - start_;
+		WARNING("%s took %.2f us", name_.c_str(), elapsed.count());
 	}
 
 private:
@@ -88,28 +96,39 @@ private:
  * ATTENTION:
  * For the last trace, a breakpoint is set to get the call stack.
  */
-bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
+bool find_next_unresolved_branch(ThreadContext &tcontext, ucontext_t *uc, uint64_t pc) {
 	while (true) {
+		tcontext.reset_branch();
+
+		// INT_MAX suffices as branches appear at basic block ends
 		int length = INT_MAX;
-		// TODO: caculate the length. The length can't be too large or too small
-		// int length = executable_segments->getExecutableSegmentSize(pc);
-		bool found = find_next_branch(tcontext, pc, length);
+		bool found = find_next_branch(tcontext, uc, pc, length);
 		if (!found) {
-			// in duckdb TPC-H benchmark, sometimes no branch is discovered
+			// FIXME(melos): in duckdb TPC-H benchmark, sometimes no branch is discovered
 			WARNING("Fail to find a branch until the end of the code from %#lx.", pc);
 			return false;
 		}
 
-		ucontext_t _ {}; // for statical evaluation, ucontext is unnecessary
-		auto [target, taken] = check_branch_if_taken(tcontext, _, true, length);
+		uint64_t target = UNKNOWN_ADDR;
+		bool taken = false;
+		if (tcontext.get_branch().to_addr != UNKNOWN_ADDR) {
+			taken = true;
+			target = tcontext.get_branch().to_addr;
+			WARNING("taken branch(rs): %#lx->%#lx", tcontext.get_branch().from_addr, tcontext.get_branch().to_addr);
+			tcontext.add_infer_branch();
+		} else {
+			ucontext_t _ {}; // for statical evaluation, ucontext is unnecessary
+			std::tie(target, taken) = check_branch_if_taken(tcontext, _, true, length);
 
-		// handle the breakpoint since the branch can't be evaluated statically
-		if (target == UNKNOWN_ADDR) {
-			DEBUG("Should set the breakpoint");
-			return true;
+			// handle the breakpoint since the branch can't be evaluated statically
+			if (target == UNKNOWN_ADDR) {
+				DEBUG("Should set the breakpoint");
+				return true;
+			}
 		}
 
 		// branch is statically taken
+		// TODO: taken is ambiguous, what about found?
 		if (taken) {
 			DEBUG("Branch is taken unconditionally");
 
@@ -120,6 +139,7 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 			assert(!tcontext.stack_lbr_entry_full() && "it's impossible to get full stack trace here"); // last trace
 			tcontext.set_to_addr(target);
 			tcontext.add_to_stack_lbr_entry();
+
 			if (tcontext.stack_lbr_entry_full()) // last trace
 			{
 				// when the last trace is recorded statically, we can't determine its callstack
@@ -138,6 +158,9 @@ bool find_next_unresolved_branch(ThreadContext &tcontext, uint64_t pc) {
 }
 
 void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
+	ERROR("into breakpoint");
+	b_cnt++;
+	TimerGuard timer("breakpoint_handler");
 	// This avoids recursively hitting breakpoints in our own profiling code.
 	thread_local_context_->disable_perf_breakpoint_event();
 	if (thread_local_context_->is_stop())
@@ -245,7 +268,8 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 		}
 	}
 
-	bool ok = find_next_unresolved_branch(*thread_local_context_, target);
+	thread_local_context_->set_simulator_used(!ENABLE_RUNTIME);
+	bool ok = find_next_unresolved_branch(*thread_local_context_, uc, target);
 
 	uint64_t next_from_addr = thread_local_context_->get_branch().from_addr;
 	if (!executable_segments->isAddressInExecutableSegment(next_from_addr)) {
@@ -270,6 +294,9 @@ void breakpoint_handler(int signum, siginfo_t *info, void *ucontext) {
 }
 
 void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
+	ERROR("into sampling");
+	s_cnt++;
+	TimerGuard timer("sampling_handler");
 	sigset_t old_set;
 	signal_prehandle(old_set);
 	// cache the tid to prevent syscall every time
@@ -356,7 +383,8 @@ void sampling_handler(int signum, siginfo_t *info, void *ucontext) {
 		return;
 	}
 
-	bool ok = find_next_unresolved_branch(*thread_local_context_, pc);
+	thread_local_context_->set_simulator_used(!ENABLE_RUNTIME);
+	bool ok = find_next_unresolved_branch(*thread_local_context_, uc, pc);
 	if (ok) {
 		thread_local_context_->change_perf_breakpoint_event(thread_local_context_->get_branch().from_addr);
 	} else {
@@ -380,11 +408,23 @@ std::vector<pid_t> start_profiler(pid_t pid, pid_t tid) {
 	assert(tids.size() > 0 && "Target should has at least one thread.");
 	INFO("main :%d and current %d", pid, tid);
 
+	// 1. init the runtime simulator
 	for (int i = 0; i < tids.size(); i++) {
 		pid_t tid = tids[i];
 		thread_context[i].set_tid(tid);
 		thread_context[i].set_buffer_manager(buffer_manager);
 		thread_context[i].thread_start();
+		thread_context[i].set_total_branch_cnt(total_branch_cnt);
+		thread_context[i].init_simulator();
+		std::ifstream file("sample_period.txt");
+
+		thread_context[i].set_global_sample_period(sampling_period);
+		INFO("main :%d and current %d start profiling", pid, tids[i]);
+	}
+
+	// 2. init the sampling events
+	for (int i = 0; i < tids.size(); ++i) {
+		pid_t tid = tids[i];
 		thread_context[i].open_perf_sampling_event();
 		thread_context[i].init_perf_breakpoint_event(); // use a
 		std::ifstream file("sample_period.txt");
@@ -427,8 +467,7 @@ void profiler_main_thread() {
 	pid_t tid = syscall(SYS_gettid);
 	int restart_count = 0;
 
-	// std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	while (true) {
+	while (!profiler_stop.load()) {
 		buffer_manager->init();
 		auto tids = start_profiler(pid, tid);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -438,11 +477,13 @@ void profiler_main_thread() {
 	}
 
 	// the following code may cause the segment fault
+	printf("stop the profiler thread");
 	delete buffer_manager;
 	return;
 }
 
 __attribute__((constructor)) void preload_main() {
+	start_time = std::chrono::high_resolution_clock::now();
 	using json = nlohmann::json;
 
 	executable_segments = new ExecutableSegments(true);
@@ -499,6 +540,58 @@ __attribute__((constructor)) void preload_main() {
 			printf("enable_log not found in config\n");
 			ENABLE_LOG = true; // default to enabled if not specified
 		}
+
+		if (config.contains("log_level")) {
+			if (config["log_level"].is_string()) {
+				std::string level_str = config["log_level"];
+				if (level_str == "DEBUG") {
+					LOG_LEVEL = LOG_DEBUG;
+				} else if (level_str == "INFO") {
+					LOG_LEVEL = LOG_INFO;
+				} else if (level_str == "WARNING") {
+					LOG_LEVEL = LOG_WARNING;
+				} else if (level_str == "ERROR") {
+					LOG_LEVEL = LOG_ERROR;
+				} else if (level_str == "NONE") {
+					LOG_LEVEL = LOG_NONE;
+				} else {
+					printf("invalid log level string %s, using default\n", level_str.c_str());
+					LOG_LEVEL = LOG_INFO;
+				}
+			} else {
+				printf("invalid log level format, using default\n");
+				LOG_LEVEL = LOG_INFO;
+			}
+		} else {
+			printf("log_level not found in config, using default\n");
+			LOG_LEVEL = LOG_INFO;
+		}
+
+		if (config.contains("enable_runtime")) {
+			if (config["enable_runtime"]) {
+				printf("runtime is enabled\n");
+				ENABLE_RUNTIME = true;
+			} else {
+				printf("runtime is disabled\n");
+				ENABLE_RUNTIME = false;
+			}
+		} else {
+			printf("enable_runtime not found in config\n");
+			ENABLE_RUNTIME = false; // default to enabled if not specified
+		}
+
+		if (config.contains("enable_timestamp")) {
+			if (config["enable_timestamp"]) {
+				printf("timestamp is enabled\n");
+				ENABLE_TIMESTAMP = true;
+			} else {
+				printf("timestamp is disabled\n");
+				ENABLE_TIMESTAMP = false;
+			}
+		} else {
+			printf("enable_timestamp not found in config\n");
+			ENABLE_TIMESTAMP = false; // default to enabled if not specified
+		}
 	} catch (const std::exception &e) {
 		printf("Error parsing config.json: %s\n", e.what());
 		return;
@@ -533,8 +626,20 @@ __attribute__((constructor)) void preload_main() {
 		}
 	}
 
-	std::thread t(profiler_main_thread);
-	t.detach();
+	profiler_thread = std::thread(profiler_main_thread);
+	atexit([]() {
+		profiler_stop.store(true);
 
-	atexit([]() { INFO("Just for testing :D Hooked exit function"); });
+		if (profiler_thread.joinable()) {
+			profiler_thread.join();
+		}
+		double branch_per_ms = 0.0;
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+		branch_per_ms = static_cast<double>(*total_branch_cnt) / duration.count();
+		printf("Just for testing :D Hooked exit function %d branches in %d ms(%.2f branches/ms)\n", *total_branch_cnt,
+		       duration.count(), branch_per_ms);
+		printf("Breakpoint handler executed %d times\n", b_cnt);
+		printf("Sampling handler executed %d times\n", s_cnt);
+	});
 }

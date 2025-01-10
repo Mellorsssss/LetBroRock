@@ -38,48 +38,136 @@ uint64_t get_pc(ucontext_t *ucontext) {
 #endif
 }
 
-bool find_next_branch(ThreadContext &tcontext, uint64_t pc, int length) {
-	amed_context context;
+void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext) {
+	mcontext->size = sizeof(dr_mcontext_t);
+	mcontext->flags = DR_MC_ALL;
+
 #if defined(__x86_64__)
-	context.architecture = AMED_ARCHITECTURE_X86;
-	context.machine_mode = AMED_MACHINE_MODE_64;
+	mcontext->xdi = ucontext->uc_mcontext.gregs[REG_RDI];
+	mcontext->xsi = ucontext->uc_mcontext.gregs[REG_RSI];
+	mcontext->xbp = ucontext->uc_mcontext.gregs[REG_RBP];
+	mcontext->xsp = ucontext->uc_mcontext.gregs[REG_RSP];
+	mcontext->xax = ucontext->uc_mcontext.gregs[REG_RAX];
+	mcontext->xbx = ucontext->uc_mcontext.gregs[REG_RBX];
+	mcontext->xcx = ucontext->uc_mcontext.gregs[REG_RCX];
+	mcontext->xdx = ucontext->uc_mcontext.gregs[REG_RDX];
+	mcontext->xip = (byte *)ucontext->uc_mcontext.gregs[REG_RIP];
+	mcontext->xflags = ucontext->uc_mcontext.gregs[REG_EFL];
+	mcontext->r8 = ucontext->uc_mcontext.gregs[REG_R8];
+	mcontext->r9 = ucontext->uc_mcontext.gregs[REG_R9];
+	mcontext->r10 = ucontext->uc_mcontext.gregs[REG_R10];
+	mcontext->r11 = ucontext->uc_mcontext.gregs[REG_R11];
+	mcontext->r12 = ucontext->uc_mcontext.gregs[REG_R12];
+	mcontext->r13 = ucontext->uc_mcontext.gregs[REG_R13];
+	mcontext->r14 = ucontext->uc_mcontext.gregs[REG_R14];
+	mcontext->r15 = ucontext->uc_mcontext.gregs[REG_R15];
+	// mcontext-> = ucontext->uc_mcontext.gregs[REG_CSGSFS];
+	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_ERR];
+	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_TRAPNO];
+	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_OLDMASK];
+	// mcontext->cr = ucontext->uc_mcontext.gregs[REG_CR2];
 #elif defined(__aarch64__)
-	context.architecture = AMED_ARCHITECTURE_AARCH64;
-	context.machine_mode = AMED_MACHINE_MODE_64;
+	mcontext->r0 = ucontext->uc_mcontext.regs[0];
+	mcontext->r1 = ucontext->uc_mcontext.regs[1];
+	mcontext->r2 = ucontext->uc_mcontext.regs[2];
+	mcontext->r3 = ucontext->uc_mcontext.regs[3];
+	mcontext->r4 = ucontext->uc_mcontext.regs[4];
+	mcontext->r5 = ucontext->uc_mcontext.regs[5];
+	mcontext->r6 = ucontext->uc_mcontext.regs[6];
+	mcontext->r7 = ucontext->uc_mcontext.regs[7];
+	mcontext->r8 = ucontext->uc_mcontext.regs[8];
+	mcontext->r9 = ucontext->uc_mcontext.regs[9];
+	mcontext->r10 = ucontext->uc_mcontext.regs[10];
+	mcontext->r11 = ucontext->uc_mcontext.regs[11];
+	mcontext->r12 = ucontext->uc_mcontext.regs[12];
+	mcontext->r13 = ucontext->uc_mcontext.regs[13];
+	mcontext->r14 = ucontext->uc_mcontext.regs[14];
+	mcontext->r15 = ucontext->uc_mcontext.regs[15];
+	mcontext->r16 = ucontext->uc_mcontext.regs[16];
+	mcontext->r17 = ucontext->uc_mcontext.regs[17];
+	mcontext->r18 = ucontext->uc_mcontext.regs[18];
+	mcontext->r19 = ucontext->uc_mcontext.regs[19];
+	mcontext->r20 = ucontext->uc_mcontext.regs[20];
+	mcontext->r21 = ucontext->uc_mcontext.regs[21];
+	mcontext->r22 = ucontext->uc_mcontext.regs[22];
+	mcontext->r23 = ucontext->uc_mcontext.regs[23];
+	mcontext->r24 = ucontext->uc_mcontext.regs[24];
+	mcontext->r25 = ucontext->uc_mcontext.regs[25];
+	mcontext->r26 = ucontext->uc_mcontext.regs[26];
+	mcontext->r27 = ucontext->uc_mcontext.regs[27];
+	mcontext->r28 = ucontext->uc_mcontext.regs[28];
+	mcontext->r29 = ucontext->uc_mcontext.regs[29];
+	mcontext->r30 = ucontext->uc_mcontext.regs[30];
+	mcontext->r31 = ucontext->uc_mcontext.regs[31];
+	mcontext->pc = (byte *)ucontext->uc_mcontext.pc;
+	mcontext->sp = (reg_t)ucontext->uc_mcontext.sp;
+	mcontext->xflags = ucontext->uc_mcontext.pstate;
 #endif
+}
 
-	context.length = length;
-	context.address = (uint8_t *)pc;
+bool find_next_branch(ThreadContext &tcontext, ucontext_t *uc, uint64_t pc, int length) {
+	INFO("Finding next branch");
 
-	amed_context *pcontext = &context;
+	if (!tcontext.get_simulator_used()) {
+		tcontext.set_simulator_context(*uc);
+	}
+	uint64_t start_pc = pc;
 
-	amed_insn insn;
-	amed_formatter formatter = {0};
-	formatter.lower_case = true;
-	char buffer[256] = {};
-	// TODO(performance): partial decoding instructions non-branch instructions
-	while (amed_decode_insn(pcontext, &insn)) {
-		uint64_t temp_pc = (uint64_t)(pcontext->address);
-		DEBUG("current pc: %lx with length %d", temp_pc, insn.length);
-		// TODO: sometimes amed fails to dump the instruction
-		// amed_print_insn(buffer, pcontext, &insn, &formatter);
-		// DEBUG("instruction: %s", buffer);
+	dr_mcontext_t mcontext;
+	void *dr_context = dr_get_current_drcontext();
+	init_dr_mcontext(&mcontext, uc);
 
-		pcontext->address += insn.length;
-		pcontext->length -= insn.length;
+	instr_noalloc_t noalloc;
+	instr_noalloc_init(dr_context, &noalloc);
+	instr_t *d_insn = instr_from_noalloc(&noalloc);
+	byte *addr = (byte *)(pc);
+	INFO("the start pc is %#lx and the begin addr is %#lx", start_pc, (uint64_t)(addr));
 
-		// amed_print_insn(buffer, &context, &insn, &formatter);
-		// DEBUG("%s(len: %d, %d args)", buffer, insn.length, insn.argument_count);
+	int num_instructions = 0;
+	auto start = std::chrono::high_resolution_clock::now();
 
-		if (!is_control_flow_transfer(insn)) {
-			continue;
+	while (decode(dr_context, addr, d_insn)) {
+		uint64_t temp_pc = (uint64_t)addr;
+		INFO("PC: %lx, len: %d", temp_pc, instr_length(dr_context, d_insn));
+
+		if (!tcontext.get_simulator_used()) {
+			tcontext.append_simulator_code((int *)addr, instr_length(dr_context, d_insn));
+			num_instructions++;
 		}
 
-		// find a branch and fill in its from address
+		addr += instr_length(dr_context, d_insn);
+
+		if (!instr_is_cti(d_insn))
+			continue;
+
 		tcontext.set_from_addr(temp_pc);
+
+		// runtime simulation
+		if (!tcontext.get_simulator_used()) {
+			INFO("First time in this trace with code range: [%#lx, %#lx]", start_pc, temp_pc);
+
+			if (int err = tcontext.execute_simulator()) {
+				ERROR("Simulator error: %d", err);
+			}
+
+			auto end = std::chrono::high_resolution_clock::now();
+			WARNING("Execution time: %.2f us(with %d instructions)",
+			        std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(end - start).count(),
+			        num_instructions);
+
+			WARNING("runtime simulation eval PC: %#lx -> %#lx", temp_pc, tcontext.get_simulator_pc());
+
+			// use runtime simulator to get the next pc
+			// TODO(melos): check if we need to use this outcome. If we rely on some unsafe assumptions,
+			// we may need to drop this outcome.
+			tcontext.set_to_addr(tcontext.get_simulator_pc());
+			tcontext.reset_simulator();
+
+			// TODO: for now, we only use simulator once in a trace
+			tcontext.set_simulator_used(true);
+		}
 		return true;
 	}
-
 	return false;
 }
 
@@ -93,27 +181,27 @@ void enable_perf_sampling(pid_t tid, int perf_fd) {
 
 std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontext_t &context, bool static_eval,
                                                 int length) {
-	amed_context acontext;
-
 	uint64_t from_addr = tcontext.get_branch().from_addr;
-#if defined(__x86_64__)
-	acontext.architecture = AMED_ARCHITECTURE_X86;
-	acontext.machine_mode = AMED_MACHINE_MODE_64;
-#elif defined(__aarch64__)
-	acontext.architecture = AMED_ARCHITECTURE_AARCH64;
-	acontext.machine_mode = AMED_MACHINE_MODE_64;
-#endif
-	acontext.length = length;
-	acontext.address = (uint8_t *)from_addr;
+
+	// Use DynamoRIO for decoding
+	dr_mcontext_t mcontext;
+	void *dr_context = tcontext.get_dr_context();
+	init_dr_mcontext(&mcontext, &context);
+
+	instr_noalloc_t noalloc;
+	instr_noalloc_init(dr_context, &noalloc);
+	instr_t *d_insn = instr_from_noalloc(&noalloc);
+	byte *addr = (byte *)from_addr;
 
 	DEBUG("check_branch_if_taken: decode the instruction at %lx with length %d", from_addr, length);
-	amed_insn insn;
-	if (amed_decode_insn(&acontext, &insn)) {
-		assert(is_control_flow_transfer(insn) && "should be a control-flow transfer instruction");
-		// if (!is_control_flow_transfer(insn))
-		// return std::make_pair(UNKNOWN_ADDR, false);
-		auto [target, taken] = static_eval ? static_evaluate(tcontext, from_addr, acontext, insn)
-		                                   : evaluate(tcontext.get_dr_context(), acontext, insn, &context);
+	if (decode(dr_context, addr, d_insn)) {
+		if (!instr_is_cti(d_insn)) {
+			ERROR("Expected control-flow transfer instruction at %#lx", from_addr);
+			return std::make_pair(0, false);
+		}
+
+		auto [target, taken] =
+		    static_eval ? static_evaluate(tcontext, from_addr, d_insn) : evaluate(dr_context, d_insn, &context);
 		if (taken) {
 			if (static_eval) {
 				tcontext.add_static_branch();
@@ -124,7 +212,7 @@ std::pair<uint64_t, bool> check_branch_if_taken(ThreadContext &tcontext, ucontex
 
 		return std::make_pair(target, taken);
 	} else {
-		ERROR("check_branch_if_taken: fail to decode the cti");
+		ERROR("check_branch_if_taken: fail to decode the cti using DynamoRIO");
 	}
 
 	return std::make_pair(0, false);
@@ -182,138 +270,66 @@ bool is_control_flow_transfer(amed_insn &insn) {
 	case AMED_CATEGORY_RET:
 		return true;
 	default:
+		if (insn.may_branch) {
+			ERROR("fuck! this instruction may branch! %d", insn.categories[1]);
+		}
 		return false;
 	}
 }
 
-void init_dr_mcontext(dr_mcontext_t *mcontext, ucontext_t *ucontext) {
-	mcontext->size = sizeof(dr_mcontext_t);
-	mcontext->flags = DR_MC_ALL;
-
-#if defined(__x86_64__)
-	mcontext->xdi = ucontext->uc_mcontext.gregs[REG_RDI];
-	mcontext->xsi = ucontext->uc_mcontext.gregs[REG_RSI];
-	mcontext->xbp = ucontext->uc_mcontext.gregs[REG_RBP];
-	mcontext->xsp = ucontext->uc_mcontext.gregs[REG_RSP];
-	mcontext->xax = ucontext->uc_mcontext.gregs[REG_RAX];
-	mcontext->xbx = ucontext->uc_mcontext.gregs[REG_RBX];
-	mcontext->xcx = ucontext->uc_mcontext.gregs[REG_RCX];
-	mcontext->xdx = ucontext->uc_mcontext.gregs[REG_RDX];
-	mcontext->xip = (byte *)ucontext->uc_mcontext.gregs[REG_RIP];
-	mcontext->xflags = ucontext->uc_mcontext.gregs[REG_EFL];
-	mcontext->r8 = ucontext->uc_mcontext.gregs[REG_R8];
-	mcontext->r9 = ucontext->uc_mcontext.gregs[REG_R9];
-	mcontext->r10 = ucontext->uc_mcontext.gregs[REG_R10];
-	mcontext->r11 = ucontext->uc_mcontext.gregs[REG_R11]; 
-	mcontext->r12 = ucontext->uc_mcontext.gregs[REG_R12];
-	mcontext->r13 = ucontext->uc_mcontext.gregs[REG_R13];
-	mcontext->r14 = ucontext->uc_mcontext.gregs[REG_R14];
-	mcontext->r15 = ucontext->uc_mcontext.gregs[REG_R15];
-	// mcontext-> = ucontext->uc_mcontext.gregs[REG_CSGSFS];
-	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_ERR];
-	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_TRAPNO];
-	// mcontext->flags = ucontext->uc_mcontext.gregs[REG_OLDMASK];
-	// mcontext->cr = ucontext->uc_mcontext.gregs[REG_CR2];
-#elif defined(__aarch64__)
-	mcontext->r0 = ucontext->uc_mcontext.regs[0];
-	mcontext->r1 = ucontext->uc_mcontext.regs[1];
-	mcontext->r2 = ucontext->uc_mcontext.regs[2];
-	mcontext->r3 = ucontext->uc_mcontext.regs[3];
-	mcontext->r4 = ucontext->uc_mcontext.regs[4];
-	mcontext->r5 = ucontext->uc_mcontext.regs[5];
-	mcontext->r6 = ucontext->uc_mcontext.regs[6];
-	mcontext->r7 = ucontext->uc_mcontext.regs[7];
-	mcontext->r8 = ucontext->uc_mcontext.regs[8];
-	mcontext->r9 = ucontext->uc_mcontext.regs[9];
-	mcontext->r10 = ucontext->uc_mcontext.regs[10];
-	mcontext->r11 = ucontext->uc_mcontext.regs[11];
-	mcontext->r12 = ucontext->uc_mcontext.regs[12];
-	mcontext->r13 = ucontext->uc_mcontext.regs[13];
-	mcontext->r14 = ucontext->uc_mcontext.regs[14];
-	mcontext->r15 = ucontext->uc_mcontext.regs[15];
-	mcontext->r16 = ucontext->uc_mcontext.regs[16];
-	mcontext->r17 = ucontext->uc_mcontext.regs[17];
-	mcontext->r18 = ucontext->uc_mcontext.regs[18];
-	mcontext->r19 = ucontext->uc_mcontext.regs[19];
-	mcontext->r20 = ucontext->uc_mcontext.regs[20];
-	mcontext->r21 = ucontext->uc_mcontext.regs[21];
-	mcontext->r22 = ucontext->uc_mcontext.regs[22];
-	mcontext->r23 = ucontext->uc_mcontext.regs[23];
-	mcontext->r24 = ucontext->uc_mcontext.regs[24];
-	mcontext->r25 = ucontext->uc_mcontext.regs[25];
-	mcontext->r26 = ucontext->uc_mcontext.regs[26];
-	mcontext->r27 = ucontext->uc_mcontext.regs[27];
-	mcontext->r28 = ucontext->uc_mcontext.regs[28];
-	mcontext->r29 = ucontext->uc_mcontext.regs[29];
-	mcontext->r30 = ucontext->uc_mcontext.regs[30];
-	mcontext->r31 = ucontext->uc_mcontext.regs[31];
-	mcontext->pc = (byte *)ucontext->uc_mcontext.pc;
-	mcontext->xflags = ucontext->uc_mcontext.pstate;
-#endif
-}
-
-std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, amed_context &context,
-                                          amed_insn &insn) {
+std::pair<uint64_t, bool> static_evaluate(ThreadContext &tcontext, uint64_t pc, instr_t *d_insn) {
 	return std::make_pair(UNKNOWN_ADDR, true);
 #ifdef NO_STATIC
 	return std::make_pair(UNKNOWN_ADDR, true);
 #endif
-	assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
-	if ((AMED_CATEGORY_BRANCH == insn.categories[1] && AMED_CATEGORY_UNCONDITIONALLY == insn.categories[2]) ||
-	    AMED_CATEGORY_CALL == insn.categories[1]) {
-		instr_noalloc_t noalloc;
-		instr_noalloc_init(tcontext.get_dr_context(), &noalloc);
-		instr_t *d_insn = instr_from_noalloc(&noalloc);
+	assert(d_insn && "d_insn should not be null");
+	assert(instr_is_cti(d_insn) && "instruction should be a control-flow transfer instruction.");
 
-		DEBUG("static_evaluate: try to decode the instruction");
-		if (decode(tcontext.get_dr_context(), (byte *)pc, d_insn) == nullptr) {
-			ERROR("fail to decode the instruction using dynamorio");
-		}
-
+	if (instr_is_ubr(d_insn) || instr_is_call(d_insn)) {
 		opnd_t target_op = instr_get_target(d_insn);
 		uint64_t target_addr = UNKNOWN_ADDR;
+
 		if (opnd_is_immed(target_op)) {
 			if (opnd_is_immed_int(target_op)) {
 				target_addr = opnd_get_immed_int(target_op);
 			} else if (opnd_is_immed_int64(target_op)) {
 				target_addr = opnd_get_immed_int64(target_op);
 			} else {
-				assert(0 && "direct control flow trasfer should only go to int address!");
+				assert(0 && "direct control flow transfer should only go to int address!");
 			}
 			INFO("statically evaluated address from immed: %#lx", target_addr);
 		} else if (opnd_is_abs_addr(target_op)) {
 			target_addr = (uint64_t)opnd_compute_address(target_op, nullptr);
 			if (target_addr == 0) {
-				ERROR("fail to comput the addr");
+				ERROR("fail to compute the addr");
 			}
 			INFO("statically evaluated address from abs_addr: %#lx", target_addr);
 		} else if (opnd_is_pc(target_op)) {
 			target_addr = (uint64_t)opnd_get_pc(target_op);
 			if (target_addr == 0) {
-				ERROR("fail to comput the addr");
+				ERROR("fail to compute the addr");
 			}
 			INFO("statically evaluated address from pc: %#lx", target_addr);
 		} else {
 			DEBUG("static_evaluate: the target is not imm");
 		}
 
-		DEBUG("taken branch: %#lx -> %#lx", pc, target_addr);
-		return std::make_pair(target_addr, target_addr == UNKNOWN_ADDR ? false : true);
+		WARNING("taken branch(static): %#lx -> %#lx", pc, target_addr);
+		return std::make_pair(target_addr, target_addr != UNKNOWN_ADDR);
 	} else {
 		return std::make_pair(UNKNOWN_ADDR, false);
 	}
 }
 
-std::pair<uint64_t, bool> evaluate(void *dr_context, amed_context &context, amed_insn &insn, ucontext_t *ucontext) {
+std::pair<uint64_t, bool> evaluate(void *dr_context, instr_t *d_insn, ucontext_t *ucontext) {
 #if defined(__x86_64__)
-	return evaluate_x86(dr_context, context, insn, ucontext);
+	return evaluate_x86(dr_context, d_insn, ucontext);
 #elif defined(__aarch64__)
-	return evaluate_arm(dr_context, context, insn, ucontext);
+	return evaluate_arm(dr_context, d_insn, ucontext);
 #endif
 }
 
-std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context, amed_insn &insn,
-                                       ucontext_t *ucontext) {
+std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, instr_t *d_insn, ucontext_t *ucontext) {
 #if defined(__x86_64__)
 	assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
 
@@ -322,12 +338,7 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 	init_dr_mcontext(&mcontext, ucontext);
 	instr_noalloc_t noalloc;
 	instr_noalloc_init(dr_context, &noalloc);
-	instr_t *d_insn = instr_from_noalloc(&noalloc);
-	byte *addr = (byte *)(get_pc(ucontext));
 
-	if (decode(dr_context, addr, d_insn) == nullptr) {
-		ERROR("fail to decode the instruction using dynamorio");
-	}
 	// dr_print_instr(dr_context, STDOUT, d_insn, "DR-instrcution: ");
 
 	// judge what kind of the instruction is and get target address
@@ -415,7 +426,6 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 	} else {
 		assert(0 && "fail to decode such a branch");
 	}
-
 
 	if (target_addr == UNKNOWN_ADDR) {
 		puts("fail to get the target address of the operand");
@@ -529,23 +539,16 @@ std::pair<uint64_t, bool> evaluate_x86(void *dr_context_, amed_context &context,
 #endif
 }
 
-std::pair<uint64_t, bool> evaluate_arm(void *dr_context_, amed_context &context, amed_insn &insn, ucontext_t *ucontext) {
+std::pair<uint64_t, bool> evaluate_arm(void *dr_context_, instr_t *d_insn, ucontext_t *ucontext) {
 // TODO(guichuan): determin if an cti instruction is taken
 #if defined(__aarch64__)
-		assert(is_control_flow_transfer(insn) && "instruction should be a control-flow transfer instruction.");
+	assert(instr_is_cti(d_insn) && "instruction should be a control-flow transfer instruction.");
 
 	dr_mcontext_t mcontext;
 	void *dr_context = dr_get_current_drcontext();
 	init_dr_mcontext(&mcontext, ucontext);
 	instr_noalloc_t noalloc;
-	instr_noalloc_init(dr_context, &noalloc);
-	instr_t *d_insn = instr_from_noalloc(&noalloc);
 	byte *addr = (byte *)(get_pc(ucontext));
-
-	if (decode(dr_context, addr, d_insn) == nullptr) {
-		ERROR("fail to decode the instruction using dynamorio");
-	}
-	// dr_print_instr(dr_context, STDOUT, d_insn, "DR-instrcution: ");
 
 	// judge what kind of the instruction is and get target address
 	uint64_t target_addr = UNKNOWN_ADDR;
@@ -681,113 +684,114 @@ std::pair<uint64_t, bool> evaluate_arm(void *dr_context_, amed_context &context,
 		return static_cast<int64_t>(origin) << (64 - bit_length) >> (64 - bit_length);
 	};
 
-	WARNING("at the address %#lx", target_addr);
 	bool taken = true;
-	uint32_t raw_inst = *(uint32_t*)addr;
-	switch (instr_get_opcode(d_insn)) {
-	case OP_b: {
-		WARNING("instruction \"b\" is a static branch");
-		// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
-		taken = true;
-		// target_addr = mcontext.r15 + imm;
-		break;
-	}
-	case OP_bl: {
-		WARNING("instruction \"bl\" is a static branch");
-		// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
-		taken = true;
-		// target_addr = mcontext.r15 + imm;
-		break;
-	}
-	case OP_blr: {
-		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
-		taken = true;
-		// target_addr = ucontext->uc_mcontext.regs[reg_id];
-		break;
-	}
-	case OP_br: {
-		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
-		taken = true;
-		// target_addr = ucontext->uc_mcontext.regs[reg_id];
-		break;
-	}
-	case OP_blraa:
-	case OP_blraaz:
-	case OP_blrab:
-	case OP_blrabz: {
-		WARNING("branch with pointer authentication is not fully supported");
-		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
-		taken = true;
-		// target_addr = ucontext->uc_mcontext.regs[reg_id];
-		break;
-	}
-	case OP_braa:
-	case OP_braaz:
-	case OP_brab:
-	case OP_brabz: {
-		WARNING("branch with pointer authentication is not fully supported");
-		// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
-		taken = true;
-		// target_addr = ucontext->uc_mcontext.regs[reg_id];
-		break;
-	}
-	case OP_bcond: {
-		uint8_t cond = raw_inst & ((1 << 4) - 1);
-		int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+	uint32_t raw_inst = *(uint32_t *)addr;
+	if (instr_is_cbr(d_insn)) {
+		switch (instr_get_opcode(d_insn)) {
+		case OP_b: {
+			WARNING("instruction \"b\" is a static branch");
+			// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+			taken = true;
+			// target_addr = mcontext.r15 + imm;
+			break;
+		}
+		case OP_bl: {
+			WARNING("instruction \"bl\" is a static branch");
+			// int64_t imm = sign_extend(raw_inst & ((1 << 26) - 1), 26);
+			taken = true;
+			// target_addr = mcontext.r15 + imm;
+			break;
+		}
+		case OP_blr: {
+			// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+			taken = true;
+			// target_addr = ucontext->uc_mcontext.regs[reg_id];
+			break;
+		}
+		case OP_br: {
+			// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+			taken = true;
+			// target_addr = ucontext->uc_mcontext.regs[reg_id];
+			break;
+		}
+		case OP_blraa:
+		case OP_blraaz:
+		case OP_blrab:
+		case OP_blrabz: {
+			WARNING("branch with pointer authentication is not fully supported");
+			// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+			taken = true;
+			// target_addr = ucontext->uc_mcontext.regs[reg_id];
+			break;
+		}
+		case OP_braa:
+		case OP_braaz:
+		case OP_brab:
+		case OP_brabz: {
+			WARNING("branch with pointer authentication is not fully supported");
+			// uint8_t reg_id = (raw_inst >> 5) & ((1 << 5) - 1);
+			taken = true;
+			// target_addr = ucontext->uc_mcontext.regs[reg_id];
+			break;
+		}
+		case OP_bcond: {
+			uint8_t cond = raw_inst & ((1 << 4) - 1);
+			int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
 
-		taken = condition_holds(cond, &mcontext);
-		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
-		break;
-	}
-	case OP_cbnz: {
-		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
-		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+			taken = condition_holds(cond, &mcontext);
+			// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+			break;
+		}
+		case OP_cbnz: {
+			uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+			// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
 
-		taken = ucontext->uc_mcontext.regs[reg_id] != 0;
-		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
-		break;
-	}
-	case OP_cbz: {
-		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
-		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
+			taken = ucontext->uc_mcontext.regs[reg_id] != 0;
+			// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+			break;
+		}
+		case OP_cbz: {
+			uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+			// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 19) - 1), 19) << 2;
 
-		taken = ucontext->uc_mcontext.regs[reg_id] == 0;
-		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
-		break;
-	}
-	case OP_tbnz: {
-		uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
-		// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
-		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+			taken = ucontext->uc_mcontext.regs[reg_id] == 0;
+			// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+			break;
+		}
+		case OP_tbnz: {
+			uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
+			// int64_t imm = sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+			uint8_t reg_id = raw_inst & ((1 << 4) - 1);
 
-		taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) != 0;
-		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
-		break;
-	}
-	case OP_tbz: {
-		uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
-		// int64_t imm =
-		                       sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
-		uint8_t reg_id = raw_inst & ((1 << 4) - 1);
+			taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) != 0;
+			// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+			break;
+		}
+		case OP_tbz: {
+			uint32_t bit_pos = ((raw_inst >> 31 & 1) << 4) + (raw_inst >> 19 & ((1 << 5) - 1));
+			// int64_t imm =
+			sign_extend((raw_inst >> 5) & ((1 << 14) - 1), 14) << 2;
+			uint8_t reg_id = raw_inst & ((1 << 4) - 1);
 
-		taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) == 0;
-		// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
-		break;
-	}
-	default:
-		assert(0 && "this instruction is not a branch instruction!");
+			taken = (ucontext->uc_mcontext.regs[reg_id] >> bit_pos & 1) == 0;
+			// target_addr = taken ? mcontext.r15 + imm : UNKNOWN_ADDR;
+			break;
+		}
+		default:
+			assert(0 && "this instruction is not a branch instruction!");
+		}
 	}
 	// handle the cbr
 	instr_free(dr_context, d_insn);
 
-	INFO("dynamically evaluated address %#lx", target_addr);
 	if (taken) {
 		INFO("taken branch: %#lx -> %#lx", get_pc(ucontext), target_addr);
 	} else {
 		// since not taken, target addr will be the next instruction
-		target_addr = get_pc(ucontext) + insn.length;
+		target_addr = get_pc(ucontext) + instr_length(dr_context, d_insn);
 		INFO("continue from %#lx", target_addr);
 	}
+	WARNING("taken branch(dynarmic): %#lx -> %#lx", get_pc(ucontext), target_addr);
 	return std::make_pair(target_addr, taken);
 #else
 	return std::make_pair(UNKNOWN_ADDR, false);
