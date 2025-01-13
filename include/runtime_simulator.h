@@ -48,15 +48,28 @@ class MyEnvironment final : public Dynarmic::A64::UserCallbacks {
 public:
 	uint64_t ticks_left = 0;
 
-	// TODO: it's interesting about sharing the memory between different threads
 	std::map<uint64_t, uint8_t> memory {};
 
 	uint64_t halt_pc = 0;
 
 	bool should_halt = false;
 
+	uint64_t code_offset = 0xaaaaaaaa0000;
+
 	void clearMemory() {
 		memory.clear();
+	}
+
+	virtual std::optional<std::uint32_t> MemoryReadCode(uint64_t vaddr) override {
+		// TODO: invalid code position
+		if (vaddr == 0) {
+			return 0x14000004;
+		}
+		if (QueryInstructionDependencies(vaddr - code_offset)) {
+			return *(uint32_t *)(vaddr);
+		}
+		ERROR("skip instruction %#lx", vaddr);
+		return 0xd503201f; // ARM64 NOP instruction encoding
 	}
 
 	uint8_t MemoryRead8(uint64_t vaddr) override {
@@ -140,6 +153,29 @@ public:
 	}
 
 	Dynarmic::A64::Jit *cpu;
+
+	/* instruction dependency analysis */
+	InstructionDependencies instruction_dependencies_;
+	bool has_loaded_dependencies_ {false};
+
+	void LoadInstructionDependencies(const std::string &filename = "instruction_dependencies.txt") {
+		instruction_dependencies_.loadFromFile(filename);
+		has_loaded_dependencies_ = true;
+	}
+
+	std::vector<uint64_t> QueryInstructionDependencies(uint64_t start_addr, uint64_t end_addr) const {
+		if (!has_loaded_dependencies_) {
+			return {};
+		}
+		return instruction_dependencies_.query(start_addr, end_addr);
+	}
+
+	bool QueryInstructionDependencies(uint64_t start_addr) const {
+		if (!has_loaded_dependencies_) {
+			return true;
+		}
+		return instruction_dependencies_.isInstructionDependant(start_addr);
+	}
 };
 
 class ArmRuntimeSimulator : public RuntimeSimulator {
@@ -166,6 +202,8 @@ public:
 		env.MemoryWrite32(0, 0x14000004); // B #16
 		jit->SetPC(0);
 		jit->Run();
+
+		env.LoadInstructionDependencies();
 		return 0;
 	}
 
