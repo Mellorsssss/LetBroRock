@@ -43,9 +43,9 @@ private:
 
 	bool isProfiler(std::string pathname) {
 		return /*pathname.find(".so") != std::string::npos || */ pathname.find("vdso") != std::string::npos ||
-		       pathname.find("vsyscall") != std::string::npos || pathname.find("profiler") != std::string::npos ||
-		       pathname.find("unwind") != std::string::npos || pathname.find("libdynamorio") != std::string::npos ||
-		       pathname.find("dynarmic") != std::string::npos;
+		       pathname.find("vsyscall") != std::string::npos || pathname.find("profiler.so") != std::string::npos ||
+		       pathname.find("unwind.so") != std::string::npos || pathname.find("libdynamorio.so") != std::string::npos ||
+		       pathname.find("dynarmic.so") != std::string::npos;
 	}
 
 	void parseProcMaps(bool exclude_shared_lib) {
